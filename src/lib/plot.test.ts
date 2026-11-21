@@ -1,0 +1,48 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { GEAR } from "./gear.ts";
+import { EXAMPLE_PLOT, computeInputs, inputListText, nextLabel, parsePlot, type PlotItem } from "./plot.ts";
+
+const item = (id: number, type: string, label: string): PlotItem => ({ id, type, label, x: 0, z: 0, rot: 0 });
+
+test("drums come first, then bass, guitar, keys, vocals", () => {
+  const rows = computeInputs([item(1, "vox", "Vox 1"), item(2, "twin", "Guitar 1"), item(3, "kit4", "Drums")]);
+  assert.equal(rows[0].name, "Kick In");
+  assert.equal(rows.at(-2)?.name, "Guitar 1");
+  assert.equal(rows.at(-1)?.name, "Vox 1");
+  assert.deepEqual(
+    rows.map((r) => r.ch),
+    rows.map((_, i) => i + 1),
+  );
+});
+
+test("labels fill in the input names", () => {
+  const rows = computeInputs([item(1, "svt", "Bass (Sam)")]);
+  assert.deepEqual(
+    rows.map((r) => r.name),
+    ["Bass (Sam) DI", "Bass (Sam) Mic"],
+  );
+});
+
+test("gear with no inputs adds no channels", () => {
+  assert.equal(computeInputs([item(1, "wedge", "Mix 1"), item(2, "riser", "Riser")]).length, 0);
+});
+
+test("numbered labels take the first free number", () => {
+  const items = [item(1, "vox", "Vox 1"), item(2, "vox", "Vox 3")];
+  assert.equal(nextLabel(items, GEAR.vox), "Vox 2");
+  assert.equal(nextLabel(items, GEAR.kit4), "Drums");
+});
+
+test("the example plot has 17 inputs and 4 mixes", () => {
+  assert.equal(computeInputs(EXAMPLE_PLOT.items).length, 17);
+  assert.match(inputListText(EXAMPLE_PLOT), /MONITORS\nMix 1\nMix 2\nMix 3\nMix 4/);
+});
+
+test("parsePlot drops unknown gear and clamps the stage", () => {
+  const p = parsePlot({ band: "X", stage: { w: 400, d: 2 }, items: [{ type: "theremin" }, { type: "vox", x: 1 }] });
+  assert.ok(p);
+  assert.deepEqual(p.stage, { w: 60, d: 6 });
+  assert.equal(p.items.length, 1);
+  assert.equal(parsePlot("nope"), null);
+});
