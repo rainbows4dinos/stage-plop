@@ -160,14 +160,6 @@ export function StagePlop() {
             value={plot.band}
             onChange={(e) => setPlot((p) => ({ ...p, band: e.target.value }))}
           />
-          <div className="seg" role="group" aria-label="View">
-            <button aria-pressed={mode === "plot"} onClick={() => changeMode("plot")}>
-              Plot
-            </button>
-            <button aria-pressed={mode === "3d"} onClick={() => changeMode("3d")}>
-              3D
-            </button>
-          </div>
           <button className="btn btn-primary" onClick={copyInputs}>
             Copy Input List
           </button>
@@ -259,12 +251,12 @@ export function StagePlop() {
       </aside>
 
       <main className="stage-wrap">
+        <span
+          className="tape tape-cyan"
+          style={{ top: -12, left: -22, transform: "rotate(-28deg)", zIndex: 6 }}
+          aria-hidden="true"
+        />
         <div className="window">
-          <span
-            className="tape tape-cyan"
-            style={{ top: -10, left: 28, transform: "rotate(-5deg)" }}
-            aria-hidden="true"
-          />
           <div className="viewport" ref={viewportRef} />
           <div className="labels" ref={labelsRef} />
           {noGL && (
@@ -276,10 +268,15 @@ export function StagePlop() {
             </div>
           )}
           <div className="stage-top">
-            <span className="tag">
-              {plot.stage.w} × {plot.stage.d} ft
-            </span>
-            <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="seg seg-sm" role="group" aria-label="View">
+                <button aria-pressed={mode === "plot"} onClick={() => changeMode("plot")}>
+                  Plot
+                </button>
+                <button aria-pressed={mode === "3d"} onClick={() => changeMode("3d")}>
+                  3D
+                </button>
+              </div>
               {mode === "3d" && (
                 <div className="seg seg-sm" role="group" aria-label="Camera Angle">
                   <button aria-label="Turn Left" onClick={() => engineRef.current?.turn(-1)}>
@@ -291,6 +288,11 @@ export function StagePlop() {
                   </button>
                 </div>
               )}
+              <span className="tag">
+                {plot.stage.w} × {plot.stage.d} ft
+              </span>
+            </div>
+            <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
               <div className="seg seg-sm" role="group" aria-label="Zoom">
                 <button aria-label="Zoom Out" onClick={() => engineRef.current?.zoomBy(1.25)}>
                   −
