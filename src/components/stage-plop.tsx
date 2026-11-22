@@ -238,16 +238,17 @@ export function StagePlop() {
             </label>
           </div>
           <div>
-            <button
-              className="toggle"
-              aria-pressed={snap}
-              onClick={() => {
-                engineRef.current?.setSnap(!snap);
-                setSnap(!snap);
-              }}
-            >
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={snap}
+                onChange={(e) => {
+                  engineRef.current?.setSnap(e.target.checked);
+                  setSnap(e.target.checked);
+                }}
+              />
               Snap to 6 in Grid
-            </button>
+            </label>
           </div>
         </div>
         <div className="panel-head">
@@ -299,26 +300,28 @@ export function StagePlop() {
                   +
                 </button>
               </div>
-              <button
-                className="toggle"
-                aria-pressed={labels}
-                onClick={() => {
-                  engineRef.current?.setShowLabels(!labels);
-                  setLabels(!labels);
-                }}
-              >
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={labels}
+                  onChange={(e) => {
+                    engineRef.current?.setShowLabels(e.target.checked);
+                    setLabels(e.target.checked);
+                  }}
+                />
                 Labels
-              </button>
-              <button
-                className="toggle"
-                aria-pressed={sound}
-                onClick={() => {
-                  setMuted(sound);
-                  setSound(!sound);
-                }}
-              >
+              </label>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={sound}
+                  onChange={(e) => {
+                    setMuted(!e.target.checked);
+                    setSound(e.target.checked);
+                  }}
+                />
                 Sound
-              </button>
+              </label>
             </div>
           </div>
           <div className="hint">
