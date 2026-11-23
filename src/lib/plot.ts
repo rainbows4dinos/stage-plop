@@ -11,6 +11,8 @@ export type PlotItem = {
   z: number;
   /** Radians around the vertical axis. */
   rot: number;
+  /** Drum kits only: mirrored for a left-handed drummer. Kits default to right-handed. */
+  lefty?: boolean;
 };
 
 export type Plot = {
@@ -130,6 +132,7 @@ export function parsePlot(value: unknown): Plot | null {
       x: Number(raw.x) || 0,
       z: Number(raw.z) || 0,
       rot: Number(raw.rot) || 0,
+      ...(raw.lefty === true && GEAR[raw.type].handed ? { lefty: true } : {}),
     });
   }
   return { band: typeof v.band === "string" ? v.band : "", stage, items };

@@ -39,6 +39,17 @@ test("the example plot has 17 inputs and 4 mixes", () => {
   assert.match(inputListText(EXAMPLE_PLOT), /MONITORS\nMix 1\nMix 2\nMix 3\nMix 4/);
 });
 
+test("kits keep a lefty flag; other gear can't have one", () => {
+  const p = parsePlot({
+    stage: { w: 16, d: 12 },
+    items: [{ type: "kit4", lefty: true }, { type: "kit5" }, { type: "twin", lefty: true }],
+  });
+  assert.deepEqual(
+    p?.items.map((i) => i.lefty),
+    [true, undefined, undefined],
+  );
+});
+
 test("parsePlot drops unknown gear and clamps the stage", () => {
   const p = parsePlot({ band: "X", stage: { w: 400, d: 2 }, items: [{ type: "theremin" }, { type: "vox", x: 1 }] });
   assert.ok(p);

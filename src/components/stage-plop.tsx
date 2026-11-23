@@ -352,6 +352,16 @@ export function StagePlop() {
                     engineRef.current?.update(selected.id, { label: GEAR[selected.type].base });
                 }}
               />
+              {GEAR[selected.type].handed && (
+                <label className="check w-fit">
+                  <input
+                    type="checkbox"
+                    checked={!!selected.lefty}
+                    onChange={(e) => engineRef.current?.setLefty(selected.id, e.target.checked)}
+                  />
+                  Left-Handed
+                </label>
+              )}
               <div className="flex gap-1.5">
                 <button
                   className="btn btn-sm"
