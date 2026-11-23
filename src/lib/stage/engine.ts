@@ -221,7 +221,15 @@ export class StageEngine {
   }
 
   items(): PlotItem[] {
-    return this.pieces.map(({ id, type, label, x, z, rot }) => ({ id, type, label, x, z, rot }));
+    return this.pieces.map(({ id, type, label, x, z, rot, lefty }) => ({
+      id,
+      type,
+      label,
+      x,
+      z,
+      rot,
+      ...(lefty ? { lefty: true } : {}),
+    }));
   }
 
   private changed() {
@@ -284,11 +292,31 @@ export class StageEngine {
       x: Math.min(s.x + 1, this.stageW / 2),
       z: s.z,
       rot: s.rot,
+      lefty: s.lefty,
       label: nextLabel(this.items(), s.def),
     });
     this.startDrop(p);
     window.setTimeout(() => plopSound(), 170);
     this.select(p.id);
+    this.changed();
+  }
+
+  /** Flip a kit for a left- or right-handed drummer. Rebuilds the model in place. */
+  setLefty(id: number, lefty: boolean) {
+    const idx = this.pieces.findIndex((q) => q.id === id);
+    const old = this.pieces[idx];
+    if (!old || !old.def.handed || !!old.lefty === lefty) return;
+    const wasSelected = this.selected === old;
+    this.scene.remove(old.holder);
+    old.labelEl.remove();
+    this.pieces.splice(idx, 1);
+    const { type, label, x, z, rot } = old;
+    const p = this.makePiece(type, { id, label, x, z, rot, lefty });
+    // keep its place in the list (input order breaks ties by position)
+    this.pieces.pop();
+    this.pieces.splice(idx, 0, p);
+    if (wasSelected) this.selected = p;
+    plopSound(0.7);
     this.changed();
   }
 
@@ -443,7 +471,7 @@ export class StageEngine {
 
   private makePiece(type: string, data: Partial<PlotItem>): Piece {
     const def = GEAR[type];
-    const inner = buildGear(def.build);
+    const inner = buildGear(def.build, { lefty: !!data.lefty && def.handed });
     const fp = footprintOf(inner);
     const pad = 0.08;
     const outline = new THREE.LineLoop(
@@ -490,6 +518,7 @@ export class StageEngine {
       x: data.x ?? 0,
       z: data.z ?? 0,
       rot: data.rot ?? 0,
+      lefty: !!data.lefty && !!def.handed,
       def,
       holder,
       inner,

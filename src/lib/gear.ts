@@ -30,6 +30,8 @@ export type GearDef = {
   riser?: boolean;
   monitor?: boolean;
   power?: boolean;
+  /** Can be flipped for a left-handed player (drum kits). */
+  handed?: boolean;
   build: BuildSpec;
   inputs: InputSpec[];
 };
@@ -57,6 +59,7 @@ const list: GearDef[] = [
     name: "4-Piece Kit",
     note: '22" kick, 12" rack, 16" floor',
     base: "Drums",
+    handed: true,
     build: { kind: "kit", kick: 22, toms: [12], floor: [16] },
     inputs: kitInputs(["Rack Tom", "Floor Tom"]),
   },
@@ -66,6 +69,7 @@ const list: GearDef[] = [
     name: "5-Piece Kit",
     note: '22" kick, 10/12" racks, 16" floor',
     base: "Drums",
+    handed: true,
     build: { kind: "kit", kick: 22, toms: [10, 12], floor: [16] },
     inputs: kitInputs(["Rack Tom 1", "Rack Tom 2", "Floor Tom"]),
   },
@@ -75,6 +79,7 @@ const list: GearDef[] = [
     name: "Bop Kit",
     note: '18" kick, 12" rack, 14" floor',
     base: "Drums",
+    handed: true,
     build: { kind: "kit", kick: 18, toms: [12], floor: [14] },
     inputs: [
       i("Kick", "Beta 52A", "Short Boom"),

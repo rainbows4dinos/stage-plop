@@ -53,7 +53,11 @@ function pole(g: THREE.Group, x: number, z: number, top: number, base = 0) {
   part(g, cyl(0.38, 0.03, 3), C.inkSoft, x, base + 0.02, z, false);
 }
 
-function kit(kick: number, toms: number[], floor: number[]) {
+// Seen from the drummer's seat, facing the audience (+z), their left is +x.
+// A right-handed kit puts the hi-hat and snare on the left and the floor tom
+// and ride on the right; a lefty kit is the mirror image. `s` flips every x.
+function kit(kick: number, toms: number[], floor: number[], lefty: boolean) {
+  const s = lefty ? -1 : 1;
   const g = new THREE.Group();
   const kr = IN(kick) / 2;
   const kg = cyl(kr, IN(16), 32);
@@ -65,22 +69,22 @@ function kit(kick: number, toms: number[], floor: number[]) {
   toms.forEach((t, idx) => {
     const tg = cyl(IN(t) / 2, IN(8));
     tg.rotateX(-0.45);
-    const x = toms.length === 1 ? -0.1 : idx === 0 ? -0.55 : 0.5;
+    const x = s * (toms.length === 1 ? 0.1 : idx === 0 ? 0.55 : -0.5);
     part(g, tg, C.paper, x, kr * 2 + 0.45, 0.1);
   });
   floor.forEach((f) => {
-    part(g, cyl(IN(f) / 2, IN(14)), C.paper, 1.55, 1.35, -0.5);
-    pole(g, 1.55, -0.5, 0.75);
+    part(g, cyl(IN(f) / 2, IN(14)), C.paper, -1.55 * s, 1.35, -0.5);
+    pole(g, -1.55 * s, -0.5, 0.75);
   });
-  part(g, cyl(IN(14) / 2, IN(5.5)), C.paper, -1.15, 2.05, -0.75);
-  pole(g, -1.15, -0.75, 1.8);
-  part(g, cyl(IN(14) / 2, 0.03), C.butter, -2.0, 3.05, -0.75);
-  part(g, cyl(IN(14) / 2, 0.03), C.butter, -2.0, 3.15, -0.75);
-  pole(g, -2.0, -0.75, 3.05);
-  part(g, cyl(IN(18) / 2, 0.025), C.butter, -1.3, 4.3, 0.55).rotation.x = 0.25;
-  pole(g, -1.3, 0.55, 4.25);
-  part(g, cyl(IN(20) / 2, 0.025), C.butter, 2.05, 3.7, 0.4).rotation.z = -0.2;
-  pole(g, 2.05, 0.4, 3.65);
+  part(g, cyl(IN(14) / 2, IN(5.5)), C.paper, 1.15 * s, 2.05, -0.75);
+  pole(g, 1.15 * s, -0.75, 1.8);
+  part(g, cyl(IN(14) / 2, 0.03), C.butter, 2.0 * s, 3.05, -0.75);
+  part(g, cyl(IN(14) / 2, 0.03), C.butter, 2.0 * s, 3.15, -0.75);
+  pole(g, 2.0 * s, -0.75, 3.05);
+  part(g, cyl(IN(18) / 2, 0.025), C.butter, 1.3 * s, 4.3, 0.55).rotation.x = 0.25;
+  pole(g, 1.3 * s, 0.55, 4.25);
+  part(g, cyl(IN(20) / 2, 0.025), C.butter, -2.05 * s, 3.7, 0.4).rotation.z = 0.2 * s;
+  pole(g, -2.05 * s, 0.4, 3.65);
   part(g, cyl(0.5, 0.18), C.ink, 0, 1.85, -1.9);
   pole(g, 0, -1.9, 1.76);
   return g;
@@ -186,10 +190,10 @@ function smallBox(w: number, h: number, d: number, color: number) {
   return g;
 }
 
-export function buildGear(spec: BuildSpec): THREE.Group {
+export function buildGear(spec: BuildSpec, opts: { lefty?: boolean } = {}): THREE.Group {
   switch (spec.kind) {
     case "kit":
-      return kit(spec.kick, spec.toms, spec.floor);
+      return kit(spec.kick, spec.toms, spec.floor, !!opts.lefty);
     case "riser":
       return riser(spec.w, spec.d, spec.h);
     case "combo":
