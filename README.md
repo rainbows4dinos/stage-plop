@@ -2,6 +2,10 @@
 
 Stage plots that don't suck. Plop gear on a stage, move it around, and the input list builds itself. Part of the [Seeens](https://www.seeens.com) family.
 
+**Try it:** [stage-plop.vercel.app](https://stage-plop.vercel.app/)
+
+![Stage Plop in 3D view: a four-piece band's gear on a 16 × 12 ft stage, with the gear library on the left and the auto-built input list on the right](docs/screenshot.png)
+
 ## What works now
 
 - Gear library with real footprints: kits and a riser, guitar and bass rigs, Pedaltrain boards, keys, vocal mics, wedges, DI boxes and power drops.
