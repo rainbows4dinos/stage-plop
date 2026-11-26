@@ -190,6 +190,47 @@ function smallBox(w: number, h: number, d: number, color: number) {
   return g;
 }
 
+// A table or stand with something on top: synth, laptop, hand percussion, or nothing.
+function table(w: number, d: number, h: number, top: "none" | "synth" | "laptop" | "percussion") {
+  const g = new THREE.Group();
+  const slab = 0.08;
+  part(g, box(w, slab, d), C.photo, 0, h - slab / 2, 0);
+  const inset = Math.min(0.15, w / 6, d / 6);
+  const legs =
+    w < 1.6 && d < 1.6
+      ? [[0, 0]]
+      : [
+          [-1, -1],
+          [1, -1],
+          [-1, 1],
+          [1, 1],
+        ];
+  for (const [sx, sz] of legs) {
+    const lx = sx * (w / 2 - inset),
+      lz = sz * (d / 2 - inset);
+    if (legs.length === 1) pole(g, 0, 0, h - slab);
+    else part(g, cyl(0.035, h - slab, 8), C.inkSoft, lx, (h - slab) / 2, lz, false);
+  }
+  const y = h;
+  if (top === "synth") {
+    const sw = Math.min(w - 0.2, 3.2),
+      sd = Math.min(d - 0.2, 1.1);
+    part(g, box(sw, 0.25, sd), C.ink, 0, y + 0.125, 0);
+    part(g, box(sw - 0.25, 0.04, sd * 0.42), C.paper, 0, y + 0.27, -sd / 2 + sd * 0.24);
+  } else if (top === "laptop") {
+    part(g, box(1.1, 0.05, 0.8), C.inkSoft, 0, y + 0.025, 0.05);
+    // screen faces the player, upstage (-z)
+    part(g, box(1.1, 0.75, 0.04), C.ink, 0, y + 0.4, 0.45).rotation.x = 0.25;
+  } else if (top === "percussion") {
+    const n = Math.max(1, Math.min(4, Math.floor(w / 0.8)));
+    for (let k = 0; k < n; k++) {
+      const x = -((n - 1) * 0.75) / 2 + k * 0.75;
+      part(g, cyl(0.3 - (k % 2) * 0.06, 0.4), k % 2 ? C.butter : C.paper, x, y + 0.2, 0);
+    }
+  }
+  return g;
+}
+
 export function buildGear(spec: BuildSpec, opts: { lefty?: boolean } = {}): THREE.Group {
   switch (spec.kind) {
     case "kit":
@@ -209,6 +250,13 @@ export function buildGear(spec: BuildSpec, opts: { lefty?: boolean } = {}): THRE
     case "wedge":
       return wedge();
     case "box":
-      return smallBox(spec.w, spec.h, spec.d, spec.color === "cyan" ? C.cyan : C.yellow);
+      return smallBox(
+        spec.w,
+        spec.h,
+        spec.d,
+        { cyan: C.cyan, yellow: C.yellow, paper: C.photo, ink: C.ink }[spec.color],
+      );
+    case "table":
+      return table(spec.w, spec.d, spec.h, spec.top);
   }
 }

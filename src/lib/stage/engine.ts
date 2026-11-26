@@ -5,7 +5,7 @@
 // like a drawn plot). 3D swings the same camera down to look around: drag
 // empty space to orbit, or jump to one of four preset angles.
 import * as THREE from "three";
-import { GEAR, type GearDef } from "../gear.ts";
+import { defOf, type CustomGear, type GearDef } from "../gear.ts";
 import { nextLabel, type PlotItem } from "../plot.ts";
 import { buildGear, COLORS as C, lineMat, mat } from "./builders.ts";
 import { plopSound } from "./sound.ts";
@@ -217,14 +217,14 @@ export class StageEngine {
     this.stageW = stage.w;
     this.stageD = stage.d;
     this.buildStage();
-    items.forEach((it) => this.makePiece(it.type, it));
+    items.forEach((it) => defOf(it) && this.makePiece(it.type, it));
     this.pieces.forEach((p) => this.place(p));
     this.nextId = Math.max(0, ...this.pieces.map((p) => p.id)) + 1;
     this.cb.onSelect(null);
   }
 
   items(): PlotItem[] {
-    return this.pieces.map(({ id, type, label, x, z, rot, lefty }) => ({
+    return this.pieces.map(({ id, type, label, x, z, rot, lefty, custom }) => ({
       id,
       type,
       label,
@@ -232,6 +232,7 @@ export class StageEngine {
       z,
       rot,
       ...(lefty ? { lefty: true } : {}),
+      ...(custom ? { custom } : {}),
     }));
   }
 
@@ -247,11 +248,12 @@ export class StageEngine {
 
   /* ---------- Gear ---------- */
 
-  plop(type: string) {
-    const def = GEAR[type];
+  /** Add a catalog piece, or a custom one when `custom` is given. */
+  plop(type: string, custom?: CustomGear) {
+    const def = defOf({ type, custom });
     if (!def) return;
     const [x, z] = this.freeSpot(footprintOf(buildGear(def.build)));
-    const p = this.makePiece(type, { x, z, rot: 0, label: nextLabel(this.items(), def) });
+    const p = this.makePiece(type, { x, z, rot: 0, label: nextLabel(this.items(), def), custom });
     this.startDrop(p);
     window.setTimeout(() => plopSound(def.riser ? 0.6 : 1), this.reduceMotion ? 0 : 170);
     this.select(p.id);
@@ -296,6 +298,7 @@ export class StageEngine {
       z: s.z,
       rot: s.rot,
       lefty: s.lefty,
+      custom: s.custom,
       label: nextLabel(this.items(), s.def),
     });
     this.startDrop(p);
@@ -304,21 +307,38 @@ export class StageEngine {
     this.changed();
   }
 
-  /** Flip a kit for a left- or right-handed drummer. Rebuilds the model in place. */
+  /** Flip a kit for a left- or right-handed drummer. */
   setLefty(id: number, lefty: boolean) {
+    const p = this.pieces.find((q) => q.id === id);
+    if (!p || !p.def.handed || !!p.lefty === lefty) return;
+    this.rebuild(id, { lefty });
+  }
+
+  /** Change a custom piece's name, shape, size or inputs. */
+  setCustom(id: number, custom: CustomGear) {
+    const p = this.pieces.find((q) => q.id === id);
+    if (!p || p.type !== "custom" || !defOf({ type: "custom", custom })) return;
+    // a label that was just the old name follows the new one
+    const label = p.label === p.custom?.name ? custom.name : p.label;
+    this.rebuild(id, { custom, label });
+  }
+
+  /** Swap a piece's model in place, keeping its id, spot and place in the list. */
+  private rebuild(id: number, patch: Partial<PlotItem>) {
     const idx = this.pieces.findIndex((q) => q.id === id);
     const old = this.pieces[idx];
-    if (!old || !old.def.handed || !!old.lefty === lefty) return;
+    if (!old) return;
     const wasSelected = this.selected === old;
     this.scene.remove(old.holder);
     old.labelEl.remove();
     this.pieces.splice(idx, 1);
-    const { type, label, x, z, rot } = old;
-    const p = this.makePiece(type, { id, label, x, z, rot, lefty });
+    const { type, label, x, z, rot, lefty, custom } = old;
+    const p = this.makePiece(type, { id, label, x, z, rot, lefty, custom, ...patch });
     // keep its place in the list (input order breaks ties by position)
     this.pieces.pop();
     this.pieces.splice(idx, 0, p);
     if (wasSelected) this.selected = p;
+    this.pieces.forEach((q) => this.place(q));
     plopSound(0.7);
     this.changed();
   }
@@ -483,7 +503,7 @@ export class StageEngine {
   }
 
   private makePiece(type: string, data: Partial<PlotItem>): Piece {
-    const def = GEAR[type];
+    const def = defOf({ type, custom: data.custom })!;
     const inner = buildGear(def.build, { lefty: !!data.lefty && def.handed });
     const fp = footprintOf(inner);
     const pad = 0.08;
@@ -532,6 +552,7 @@ export class StageEngine {
       z: data.z ?? 0,
       rot: data.rot ?? 0,
       lefty: !!data.lefty && !!def.handed,
+      custom: type === "custom" ? data.custom : undefined,
       def,
       holder,
       inner,

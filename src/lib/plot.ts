@@ -1,6 +1,7 @@
 // A plot is plain data: the stage, the gear on it, and the band's name.
 // Everything else (input list, monitor mixes, power) is derived from it.
-import { GEAR, INPUT_ORDER, type GearDef } from "./gear.ts";
+import { GEAR, INPUT_ORDER, defOf, type CustomGear, type GearDef } from "./gear.ts";
+import { validateCustom } from "./gear-schema.ts";
 
 export type PlotItem = {
   id: number;
@@ -13,6 +14,8 @@ export type PlotItem = {
   rot: number;
   /** Drum kits only: mirrored for a left-handed drummer. Kits default to right-handed. */
   lefty?: boolean;
+  /** Set when type is "custom": the piece's own definition. */
+  custom?: CustomGear;
 };
 
 export type Plot = {
@@ -35,24 +38,24 @@ export const clampStage = (w: number, d: number) => ({
   d: Math.max(6, Math.min(40, Math.round(d) || 12)),
 });
 
-export function nextLabel(items: Pick<PlotItem, "type" | "label">[], def: GearDef): string {
+export function nextLabel(items: Pick<PlotItem, "type" | "label" | "custom">[], def: GearDef): string {
   if (!def.numbered) return def.base;
-  const used = new Set(items.filter((i) => GEAR[i.type]?.base === def.base).map((i) => i.label));
+  const used = new Set(items.filter((i) => defOf(i)?.base === def.base).map((i) => i.label));
   let n = 1;
   while (used.has(`${def.base} ${n}`)) n++;
   return `${def.base} ${n}`;
 }
 
 export function computeInputs(items: PlotItem[]): InputRow[] {
-  const known = items.filter((i) => GEAR[i.type]);
+  const known = items.filter((i) => defOf(i));
   const order = known.slice().sort((a, b) => {
-    const da = GEAR[a.type],
-      db = GEAR[b.type];
+    const da = defOf(a)!,
+      db = defOf(b)!;
     return INPUT_ORDER[da.cat] - INPUT_ORDER[db.cat] || da.base.localeCompare(db.base) || a.id - b.id;
   });
   const rows: InputRow[] = [];
   for (const it of order) {
-    for (const inp of GEAR[it.type].inputs) {
+    for (const inp of defOf(it)!.inputs) {
       rows.push({
         ch: rows.length + 1,
         itemId: it.id,
@@ -65,8 +68,8 @@ export function computeInputs(items: PlotItem[]): InputRow[] {
   return rows;
 }
 
-export const monitorsOf = (items: PlotItem[]) => items.filter((i) => GEAR[i.type]?.monitor);
-export const powerOf = (items: PlotItem[]) => items.filter((i) => GEAR[i.type]?.power);
+export const monitorsOf = (items: PlotItem[]) => items.filter((i) => defOf(i)?.monitor);
+export const powerOf = (items: PlotItem[]) => items.filter((i) => defOf(i)?.power);
 
 /** Tab-separated, so it pastes cleanly into a spreadsheet or an email. */
 export function inputListText(plot: Plot): string {
@@ -124,15 +127,20 @@ export function parsePlot(value: unknown): Plot | null {
   let id = 1;
   const items: PlotItem[] = [];
   for (const raw of v.items as Partial<PlotItem>[]) {
-    if (!raw || typeof raw.type !== "string" || !GEAR[raw.type]) continue;
+    if (!raw || typeof raw.type !== "string") continue;
+    const custom =
+      raw.type === "custom" && validateCustom(raw.custom).length === 0 ? (raw.custom as CustomGear) : undefined;
+    const def = raw.type === "custom" ? (custom ? defOf({ type: "custom", custom }) : undefined) : GEAR[raw.type];
+    if (!def) continue;
     items.push({
       id: id++,
       type: raw.type,
-      label: typeof raw.label === "string" && raw.label ? raw.label : GEAR[raw.type].base,
+      label: typeof raw.label === "string" && raw.label ? raw.label : def.base,
       x: Number(raw.x) || 0,
       z: Number(raw.z) || 0,
       rot: Number(raw.rot) || 0,
-      ...(raw.lefty === true && GEAR[raw.type].handed ? { lefty: true } : {}),
+      ...(raw.lefty === true && def.handed ? { lefty: true } : {}),
+      ...(custom ? { custom } : {}),
     });
   }
   return { band: typeof v.band === "string" ? v.band : "", stage, items };

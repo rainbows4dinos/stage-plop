@@ -57,3 +57,35 @@ test("parsePlot drops unknown gear and clamps the stage", () => {
   assert.equal(p.items.length, 1);
   assert.equal(parsePlot("nope"), null);
 });
+
+const theremin = {
+  name: "Theremin",
+  cat: "Keys",
+  shape: { kind: "table", w: 24, d: 14, h: 32, top: "none" },
+  inputs: "di",
+} as const;
+
+test("custom pieces add their inputs and survive a save and load", () => {
+  const items: PlotItem[] = [{ id: 1, type: "custom", label: "Theremin", x: 0, z: 0, rot: 0, custom: { ...theremin } }];
+  assert.deepEqual(
+    computeInputs(items).map((r) => [r.name, r.source]),
+    [["Theremin", "DI"]],
+  );
+  const back = parsePlot(JSON.parse(JSON.stringify({ stage: { w: 16, d: 12 }, items })));
+  assert.equal(back?.items[0].custom?.name, "Theremin");
+  assert.equal(computeInputs(back!.items).length, 1);
+});
+
+test("custom pieces with bad data are dropped on load", () => {
+  const p = parsePlot({
+    stage: { w: 16, d: 12 },
+    items: [
+      { type: "custom", custom: { ...theremin, shape: { kind: "table", w: -1, d: 14, h: 32, top: "none" } } },
+      { type: "custom", custom: { ...theremin, shape: { kind: "kit", kick: 22, toms: [], floor: [] } } },
+      { type: "custom" },
+      { type: "custom", custom: { ...theremin, inputs: [{ name: "Left", source: "DI", stand: "None" }] } },
+    ],
+  });
+  assert.equal(p?.items.length, 1);
+  assert.equal(p?.items[0].custom?.inputs.length, 1);
+});

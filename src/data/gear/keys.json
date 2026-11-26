@@ -9,7 +9,12 @@
       "note": "51.4 × 13.6 in, X stand",
       "label": "Keys",
       "numbered": true,
-      "shape": { "kind": "keys", "w": 51.4, "d": 13.6, "stand": "x" },
+      "shape": {
+        "kind": "keys",
+        "w": 51.4,
+        "d": 13.6,
+        "stand": "x"
+      },
       "inputs": "stereo-di"
     },
     {
@@ -20,7 +25,12 @@
       "note": "44 × 22 in, own legs",
       "label": "Keys",
       "numbered": true,
-      "shape": { "kind": "keys", "w": 44, "d": 22, "stand": "legs" },
+      "shape": {
+        "kind": "keys",
+        "w": 44,
+        "d": 22,
+        "stand": "legs"
+      },
       "inputs": "di"
     },
     {
@@ -30,7 +40,74 @@
       "note": "39 × 13 in, X stand",
       "label": "Synth",
       "numbered": true,
-      "shape": { "kind": "keys", "w": 39, "d": 13, "stand": "x" },
+      "shape": {
+        "kind": "keys",
+        "w": 39,
+        "d": 13,
+        "stand": "x"
+      },
+      "inputs": "stereo-di"
+    },
+    {
+      "id": "keys61",
+      "name": "Keyboard on X Stand, 61 Keys",
+      "aliases": ["generic", "keyboard", "keys", "61 keys", "x stand"],
+      "note": "Generic, 40 × 13 in",
+      "label": "Keys",
+      "numbered": true,
+      "shape": {
+        "kind": "keys",
+        "w": 40,
+        "d": 13,
+        "stand": "x"
+      },
+      "inputs": "stereo-di"
+    },
+    {
+      "id": "keys88",
+      "name": "Keyboard on X Stand, 88 Keys",
+      "aliases": ["generic", "keyboard", "keys", "88 keys", "stage piano", "digital piano", "x stand"],
+      "note": "Generic, 52 × 14 in",
+      "label": "Keys",
+      "numbered": true,
+      "shape": {
+        "kind": "keys",
+        "w": 52,
+        "d": 14,
+        "stand": "x"
+      },
+      "inputs": "stereo-di"
+    },
+    {
+      "id": "synthTable",
+      "name": "Synth on a Table",
+      "aliases": ["generic", "synth", "table", "drum machine", "groovebox", "modular", "sampler"],
+      "note": "Generic, 48 × 24 in table",
+      "label": "Synth",
+      "numbered": true,
+      "shape": {
+        "kind": "table",
+        "w": 48,
+        "d": 24,
+        "h": 30,
+        "top": "synth"
+      },
+      "inputs": "stereo-di"
+    },
+    {
+      "id": "laptopStand",
+      "name": "Laptop on a Stand",
+      "aliases": ["generic", "laptop", "computer", "backing tracks", "tracks", "playback"],
+      "note": "Generic, 18 × 14 in",
+      "label": "Laptop",
+      "numbered": true,
+      "shape": {
+        "kind": "table",
+        "w": 18,
+        "d": 14,
+        "h": 38,
+        "top": "laptop"
+      },
       "inputs": "stereo-di"
     }
   ]
