@@ -1,0 +1,48 @@
+{
+  "category": "Guitar",
+  "gear": [
+    {
+      "id": "twin",
+      "name": "Fender Twin Reverb",
+      "brand": "Fender",
+      "aliases": ["twin", "twin reverb", "65 twin", "guitar amp", "2x12 combo"],
+      "note": "2x12 combo, 26 × 10.5 in",
+      "label": "Guitar",
+      "numbered": true,
+      "shape": { "kind": "combo", "w": 26, "h": 19.5, "d": 10.5, "grill": "light" },
+      "inputs": "mic"
+    },
+    {
+      "id": "deluxe",
+      "name": "Fender Deluxe Reverb",
+      "brand": "Fender",
+      "aliases": ["deluxe", "deluxe reverb", "65 deluxe", "guitar amp", "1x12 combo"],
+      "note": "1x12 combo, 24.5 × 9.5 in",
+      "label": "Guitar",
+      "numbered": true,
+      "shape": { "kind": "combo", "w": 24.5, "h": 17.5, "d": 9.5, "grill": "light" },
+      "inputs": "mic"
+    },
+    {
+      "id": "ac30",
+      "name": "Vox AC30",
+      "brand": "Vox",
+      "aliases": ["ac30", "ac 30", "guitar amp", "2x12 combo"],
+      "note": "2x12 combo, 27.5 × 10.5 in",
+      "label": "Guitar",
+      "numbered": true,
+      "shape": { "kind": "combo", "w": 27.5, "h": 22, "d": 10.5, "grill": "dark" },
+      "inputs": "mic"
+    },
+    {
+      "id": "halfstack",
+      "name": "4x12 Half Stack",
+      "aliases": ["half stack", "4x12", "head and cab", "stack", "guitar amp"],
+      "note": "30 × 14 in cab, head on top",
+      "label": "Guitar",
+      "numbered": true,
+      "shape": { "kind": "stack", "cw": 30, "ch": 30, "cd": 14, "hw": 24, "hh": 10, "hd": 10 },
+      "inputs": "mic"
+    }
+  ]
+}

@@ -32,7 +32,38 @@ Checks: `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test`,
 
 ## Layout
 
-- `src/lib/gear.ts` the gear catalog: names, sizes, suggested inputs.
+- `src/data/gear/*.json` the gear catalog, one file per category. See [Adding Gear](#adding-gear).
+- `src/lib/gear.ts` loads the catalog; `src/lib/gear-schema.ts` defines and checks it.
 - `src/lib/plot.ts` plot data and everything derived from it (input list, copy text, parsing saved plots). Pure, tested in `plot.test.ts`.
 - `src/lib/stage/` the Three.js side: `engine.ts` (scene, camera, pointer handling), `builders.ts` (gear models), `sound.ts` (the plop).
 - `src/components/` the React panels around the stage.
+
+## Adding Gear
+
+Gear lives in `src/data/gear/`, one JSON file per category. Adding a piece is one entry and no code:
+
+```json
+{
+  "id": "superReverb",
+  "name": "Fender Super Reverb",
+  "brand": "Fender",
+  "aliases": ["super", "super reverb", "4x10 combo", "guitar amp"],
+  "note": "4x10 combo, 24.5 × 10.5 in",
+  "label": "Guitar",
+  "numbered": true,
+  "shape": { "kind": "combo", "w": 24.5, "h": 27, "d": 10.5, "grill": "light" },
+  "inputs": "mic"
+}
+```
+
+- **Sizes are inches**, from the maker's spec sheet. Within an inch is fine.
+- **`id`** is camelCase and unique across all files. Saved plots refer to it, so don't rename one that's shipped.
+- **`label`** is what the piece is called on stage. With `"numbered": true` it becomes "Guitar 1", "Guitar 2" and so on.
+- **`aliases`** are other names people search for, in lowercase.
+- **`shape.kind`** picks the 3D model: `kit`, `riser`, `combo`, `stack`, `board`, `keys`, `mic`, `wedge` or `box`. Each needs its own size fields; `src/lib/gear-schema.ts` lists them.
+- **`inputs`** is a preset (`none`, `mic`, `di`, `stereo-di`, `di+mic`, `vocal`) or a list of `{ "name", "source", "stand" }`. `{L}` in a name becomes the piece's label.
+- Flags: `handed` (kits that can be flipped for a lefty), `riser`, `monitor`, `power`.
+
+A new category file also needs adding to `GEAR_FILES` in `src/lib/gear.ts`.
+
+`npm test` checks every entry and names the file, entry and field when something's wrong.

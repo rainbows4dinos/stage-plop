@@ -1,0 +1,47 @@
+{
+  "category": "Vocals & Monitors",
+  "gear": [
+    {
+      "id": "vox",
+      "name": "Vocal Mic",
+      "aliases": ["mic", "vocal", "vox", "sm58", "mic stand"],
+      "note": "SM58 on a tall boom",
+      "label": "Vox",
+      "numbered": true,
+      "shape": { "kind": "mic" },
+      "inputs": "vocal"
+    },
+    {
+      "id": "wedge",
+      "name": "Monitor Wedge",
+      "aliases": ["wedge", "monitor", "mix", "floor monitor"],
+      "note": "22 × 16 in, faces upstage",
+      "label": "Mix",
+      "numbered": true,
+      "monitor": true,
+      "shape": { "kind": "wedge" },
+      "inputs": "none"
+    },
+    {
+      "id": "di",
+      "name": "DI Box",
+      "aliases": ["di", "direct box", "acoustic", "laptop"],
+      "note": "Acoustic, laptop, anything",
+      "label": "DI",
+      "numbered": true,
+      "shape": { "kind": "box", "w": 5, "h": 3, "d": 7.5, "color": "cyan" },
+      "inputs": "di"
+    },
+    {
+      "id": "power",
+      "name": "Power Drop",
+      "aliases": ["power", "ac", "outlet", "quad box", "extension"],
+      "note": "Quad box, 120V",
+      "label": "Power",
+      "numbered": true,
+      "power": true,
+      "shape": { "kind": "box", "w": 9, "h": 3.5, "d": 5, "color": "yellow" },
+      "inputs": "none"
+    }
+  ]
+}
