@@ -1,0 +1,37 @@
+{
+  "category": "Keys",
+  "gear": [
+    {
+      "id": "nord88",
+      "name": "Nord Stage 88",
+      "brand": "Nord",
+      "aliases": ["nord", "stage piano", "keyboard", "88 keys"],
+      "note": "51.4 × 13.6 in, X stand",
+      "label": "Keys",
+      "numbered": true,
+      "shape": { "kind": "keys", "w": 51.4, "d": 13.6, "stand": "x" },
+      "inputs": "stereo-di"
+    },
+    {
+      "id": "rhodes",
+      "name": "Rhodes Mk I 73",
+      "brand": "Rhodes",
+      "aliases": ["rhodes", "electric piano", "keyboard", "mark 1"],
+      "note": "44 × 22 in, own legs",
+      "label": "Keys",
+      "numbered": true,
+      "shape": { "kind": "keys", "w": 44, "d": 22, "stand": "legs" },
+      "inputs": "di"
+    },
+    {
+      "id": "synth61",
+      "name": "61-Key Synth",
+      "aliases": ["synth", "synthesizer", "keyboard", "61 keys"],
+      "note": "39 × 13 in, X stand",
+      "label": "Synth",
+      "numbered": true,
+      "shape": { "kind": "keys", "w": 39, "d": 13, "stand": "x" },
+      "inputs": "stereo-di"
+    }
+  ]
+}

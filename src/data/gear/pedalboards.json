@@ -1,0 +1,60 @@
+{
+  "category": "Pedalboards",
+  "gear": [
+    {
+      "id": "nano",
+      "name": "Pedaltrain Nano",
+      "brand": "Pedaltrain",
+      "aliases": ["pedalboard", "board", "small board"],
+      "note": "14 × 5.5 in",
+      "label": "Board",
+      "numbered": true,
+      "shape": { "kind": "board", "w": 14, "d": 5.5 },
+      "inputs": "none"
+    },
+    {
+      "id": "metro16",
+      "name": "Pedaltrain Metro 16",
+      "brand": "Pedaltrain",
+      "aliases": ["pedalboard", "board"],
+      "note": "16 × 8 in",
+      "label": "Board",
+      "numbered": true,
+      "shape": { "kind": "board", "w": 16, "d": 8 },
+      "inputs": "none"
+    },
+    {
+      "id": "classic1",
+      "name": "Pedaltrain Classic 1",
+      "brand": "Pedaltrain",
+      "aliases": ["pedalboard", "board"],
+      "note": "22 × 12.5 in",
+      "label": "Board",
+      "numbered": true,
+      "shape": { "kind": "board", "w": 22, "d": 12.5 },
+      "inputs": "none"
+    },
+    {
+      "id": "classicPro",
+      "name": "Pedaltrain Classic Pro",
+      "brand": "Pedaltrain",
+      "aliases": ["pedalboard", "board", "big board"],
+      "note": "32 × 16 in",
+      "label": "Board",
+      "numbered": true,
+      "shape": { "kind": "board", "w": 32, "d": 16 },
+      "inputs": "none"
+    },
+    {
+      "id": "terra42",
+      "name": "Pedaltrain Terra 42",
+      "brand": "Pedaltrain",
+      "aliases": ["pedalboard", "board", "big board"],
+      "note": "42 × 16 in",
+      "label": "Board",
+      "numbered": true,
+      "shape": { "kind": "board", "w": 42, "d": 16 },
+      "inputs": "none"
+    }
+  ]
+}

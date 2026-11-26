@@ -1,0 +1,24 @@
+{
+  "category": "Bass",
+  "gear": [
+    {
+      "id": "svt",
+      "name": "SVT Head + 8x10",
+      "brand": "Ampeg",
+      "aliases": ["svt", "ampeg", "8x10", "fridge", "bass rig", "bass amp"],
+      "note": "24 × 15.5 in cab, 4.4 ft tall",
+      "label": "Bass",
+      "shape": { "kind": "stack", "cw": 24, "ch": 52, "cd": 15.5, "hw": 24, "hh": 11, "hd": 12 },
+      "inputs": "di+mic"
+    },
+    {
+      "id": "bassCombo",
+      "name": "1x15 Bass Combo",
+      "aliases": ["bass combo", "1x15", "bass amp"],
+      "note": "22 × 17 in",
+      "label": "Bass",
+      "shape": { "kind": "combo", "w": 22, "h": 24, "d": 17, "grill": "light" },
+      "inputs": "di+mic"
+    }
+  ]
+}
