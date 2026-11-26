@@ -9,9 +9,11 @@ Stage plots that don't suck. Plop gear on a stage, move it around, and the input
 ## What works now
 
 - Gear library with real footprints: kits and a riser, guitar and bass rigs, Pedaltrain boards, keys, vocal mics, wedges, DI boxes and power drops.
+- **Add Gear** (press `/`): search by name, brand or nickname ("fridge" finds the SVT), forgiving of typos. Arrow keys and Enter plop gear without closing, so you can add a whole backline in a row. Recent picks show first; browsing by category is in the same drawer, which is a bottom sheet on phones.
 - **Plot view** (default) for arranging: straight overhead, drag to move, drag the magenta dot to rotate (15° steps), alignment guides, a 6 in snap grid, arrow keys to nudge.
 - **3D view** for looking: drag empty space to orbit, or jump between four preset angles.
 - The input list, monitor mixes and power drops come from what's on the stage, in engineer order (drums, bass, guitar, keys, vocals). **Copy Input List** copies them as tab-separated text.
+- Stage size, snap and Clear Stage live on the stage size tag.
 - Plots save in the browser.
 
 ## Next
