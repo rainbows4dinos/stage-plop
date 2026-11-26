@@ -124,6 +124,9 @@ export class StageEngine {
   private theta3d = 0;
   private phi3d = 0.9;
   private zoom = 1;
+  /** Pixels covered on the left by the Add Gear drawer; the view centers in what's left. */
+  private insetTarget = 0;
+  private inset = 0;
   private target = new THREE.Vector3(0, 0, 1.4);
   private cur = { phi: 0.0001, theta: 0, fov: 20, dist: 60, tx: 0, ty: 0, tz: 1.4 };
 
@@ -358,6 +361,10 @@ export class StageEngine {
     this.zoom = 1;
     this.defaultTarget();
   }
+  /** Keep the stage centered in the part of the view a drawer isn't covering. */
+  setInsetLeft(px: number) {
+    this.insetTarget = Math.max(0, px);
+  }
   setSnap(v: boolean) {
     this.snap = v;
   }
@@ -384,7 +391,7 @@ export class StageEngine {
     const plot = this.mode === "plot";
     const fov = plot ? 20 : 40;
     const v = THREE.MathUtils.degToRad(fov) / 2;
-    const hf = Math.atan(Math.tan(v) * (w / h));
+    const hf = Math.atan(Math.tan(v) * (Math.max(1, w - this.inset) / h));
     const side = !plot && this.quadrant() % 2 === 1;
     const spanH = (side ? this.stageD : this.stageW) + 3;
     const spanV = plot ? this.stageD + 8 : (side ? this.stageW : this.stageD) + 9;
@@ -396,6 +403,8 @@ export class StageEngine {
     const g = this.goal(),
       c = this.cur;
     const k = snap || this.reduceMotion ? 1 : 0.14;
+    this.inset += (this.insetTarget - this.inset) * (snap || this.reduceMotion ? 1 : 0.25);
+    if (Math.abs(this.insetTarget - this.inset) < 0.5) this.inset = this.insetTarget;
     const dt = Math.atan2(Math.sin(g.theta - c.theta), Math.cos(g.theta - c.theta));
     c.theta += dt * k;
     c.phi += (g.phi - c.phi) * k;
@@ -416,6 +425,10 @@ export class StageEngine {
     else cam.up.set(0, 1, 0);
     cam.lookAt(c.tx, c.ty, c.tz);
     cam.fov = c.fov;
+    const W = this.container.clientWidth,
+      H = this.container.clientHeight;
+    if (this.inset > 0.5 && W && H) cam.setViewOffset(W, H, -this.inset / 2, 0, W, H);
+    else cam.clearViewOffset();
     cam.updateProjectionMatrix();
   }
 

@@ -82,9 +82,9 @@
   .app {
     height: 100%;
     display: grid;
-    grid-template-columns: 300px minmax(0, 1fr) 360px;
+    grid-template-columns: minmax(0, 1fr) 360px;
     grid-template-rows: auto minmax(0, 1fr);
-    grid-template-areas: "head head head" "gear stage inputs";
+    grid-template-areas: "head head" "stage inputs";
     gap: 16px;
     padding: 16px;
   }
@@ -188,17 +188,19 @@
     white-space: nowrap;
     background: var(--paper-50);
   }
-  .btn:hover {
-    background: var(--ink-900);
-    color: var(--paper-50);
+  @media (hover: hover) {
+    .btn:hover {
+      background: var(--ink-900);
+      color: var(--paper-50);
+    }
+    .btn-primary:hover {
+      background: var(--paper-50);
+      color: var(--ink-900);
+    }
   }
   .btn-primary {
     background: var(--ink-900);
     color: var(--paper-50);
-  }
-  .btn-primary:hover {
-    background: var(--paper-50);
-    color: var(--ink-900);
   }
   .btn-sm {
     height: var(--control-height-sm);
@@ -353,25 +355,84 @@
     border-bottom: 1px solid var(--ink-900);
   }
 
-  .lib-item {
-    width: 100%;
+  .gear-option {
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
     gap: 8px;
-    text-align: left;
     border: 1px solid transparent;
-    background: transparent;
     padding: 6px 8px;
     cursor: pointer;
   }
-  .lib-item:hover {
+  .gear-option[aria-selected="true"] {
     background: var(--paper-photo);
     border-color: var(--ink-900);
   }
-  .lib-item:active {
+  .gear-option:active {
     transform: rotate(-1deg);
   }
+  .gear-option[aria-selected="true"] .plop {
+    background: var(--ink-900);
+    color: var(--paper-50);
+  }
+
+  /* Add Gear: slides over the stage from the left; a bottom sheet on phones. */
+  .drawer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(360px, 100%);
+    z-index: 8;
+    display: flex;
+    flex-direction: column;
+    background: var(--paper-50);
+    border-right: 1.5px solid var(--ink-900);
+    transition:
+      transform 180ms ease,
+      visibility 0s;
+  }
+  .drawer[data-open="false"] {
+    transform: translateX(-102%);
+    visibility: hidden;
+    transition:
+      transform 180ms ease,
+      visibility 0s 180ms;
+  }
+
+  .tag-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: var(--control-height-sm);
+    border: 1px solid var(--ink-900);
+    background: var(--paper-50);
+    padding: 0 8px;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .tag-button:hover,
+  .tag-button[aria-expanded="true"] {
+    background: var(--ink-900);
+    color: var(--paper-50);
+  }
+  .popover {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 9;
+    width: 260px;
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--ink-900);
+    background: var(--paper-50);
+    box-shadow: var(--shadow-hard);
+  }
+
   .plop {
     width: 28px;
     height: 28px;
@@ -380,10 +441,6 @@
     place-items: center;
     font-weight: 600;
     background: var(--paper-50);
-  }
-  .lib-item:hover .plop {
-    background: var(--ink-900);
-    color: var(--paper-50);
   }
 
   .stage-wrap {
@@ -443,6 +500,9 @@
     gap: 8px;
     pointer-events: none;
   }
+  .stage-top.beside-drawer {
+    left: calc(min(360px, 100%) + 12px);
+  }
   .stage-top > * {
     pointer-events: auto;
   }
@@ -494,6 +554,10 @@
     display: grid;
     gap: 6px;
     transform: rotate(-0.6deg);
+    transition: left 180ms ease;
+  }
+  .inspector.beside-drawer {
+    left: calc(min(360px, 100%) + 12px);
   }
 
   .data-table {
@@ -548,14 +612,8 @@
     opacity: 1;
   }
 
-  .panel-gear {
-    grid-area: gear;
-  }
   .panel-inputs {
     grid-area: inputs;
-  }
-  .tabs {
-    display: none;
   }
 
   @media (max-width: 1000px) {
@@ -563,7 +621,7 @@
       height: auto;
       grid-template-columns: minmax(0, 1fr);
       grid-template-rows: auto;
-      grid-template-areas: "head" "stage" "tabs" "panel";
+      grid-template-areas: "head" "stage" "inputs";
       gap: 12px;
       padding: 12px;
     }
@@ -575,22 +633,25 @@
       height: 60svh;
       min-height: 340px;
     }
-    .tabs {
-      display: flex;
-      grid-area: tabs;
+    .drawer {
+      position: fixed;
+      top: auto;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: auto;
+      height: min(62svh, 560px);
+      border-right: 0;
+      border-top: 1.5px solid var(--ink-900);
+      box-shadow: 0 -6px 0 0 rgb(20 20 20 / 0.08);
+      z-index: 30;
     }
-    .tabs .seg {
-      width: 100%;
+    .drawer[data-open="false"] {
+      transform: translateY(102%);
     }
-    .tabs .seg > button {
-      flex: 1;
-    }
-    .panel-gear,
-    .panel-inputs {
-      grid-area: panel;
-    }
-    .panel[data-hidden="true"] {
-      display: none;
+    .inspector.beside-drawer,
+    .stage-top.beside-drawer {
+      left: 12px;
     }
     .scroll {
       overflow: visible;

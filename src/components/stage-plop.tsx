@@ -2,28 +2,24 @@
 
 import { useEffect, useRef, useState } from "react";
 import { GEAR } from "@/lib/gear";
-import {
-  EXAMPLE_PLOT,
-  STAGE_PRESETS,
-  clampStage,
-  computeInputs,
-  inputListText,
-  parsePlot,
-  type Plot,
-} from "@/lib/plot";
+import { EXAMPLE_PLOT, clampStage, computeInputs, inputListText, parsePlot, type Plot } from "@/lib/plot";
 import { ANGLES, StageEngine, type ViewMode } from "@/lib/stage/engine";
 import { setMuted } from "@/lib/stage/sound";
-import { GearLibrary } from "./gear-library";
+import { GearDrawer } from "./gear-drawer";
 import { InputList } from "./input-list";
+import { StageSettings } from "./stage-settings";
 
 // Plots save in this browser for now. Shareable links come with Supabase.
 const STORAGE_KEY = "stage-plop-v1";
+const RECENT_KEY = "stage-plop-recent";
+const RECENT_MAX = 6;
 const DISPLAY_FONT = '"Hanken Grotesk Variable", sans-serif';
 
 export function StagePlop() {
   const viewportRef = useRef<HTMLDivElement>(null);
   const labelsRef = useRef<HTMLDivElement>(null);
   const rotRef = useRef<HTMLButtonElement>(null);
+  const addRef = useRef<HTMLButtonElement>(null);
   const engineRef = useRef<StageEngine | null>(null);
 
   const [plot, setPlot] = useState<Plot>(EXAMPLE_PLOT);
@@ -35,11 +31,11 @@ export function StagePlop() {
   const [snap, setSnap] = useState(true);
   const [labels, setLabels] = useState(true);
   const [sound, setSound] = useState(true);
-  const [tab, setTab] = useState<"gear" | "inputs">("gear");
+  const [drawer, setDrawer] = useState(false);
+  const [recent, setRecent] = useState<string[]>([]);
   const [toast, setToast] = useState<string | null>(null);
 
   const selected = plot.items.find((i) => i.id === selectedId) ?? null;
-  const presetId = STAGE_PRESETS.find((p) => p.w === plot.stage.w && p.d === plot.stage.d)?.id ?? "custom";
 
   // Start the engine once fonts are in (the AUDIENCE floor text is drawn with them).
   useEffect(() => {
@@ -54,6 +50,10 @@ export function StagePlop() {
         saved = parsePlot(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null"));
       } catch {}
       const initial = saved ?? EXAMPLE_PLOT;
+      try {
+        const r = JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]");
+        if (Array.isArray(r)) setRecent(r.filter((id) => typeof id === "string" && GEAR[id]).slice(0, RECENT_MAX));
+      } catch {}
       let engine: StageEngine;
       try {
         engine = new StageEngine(
@@ -94,12 +94,32 @@ export function StagePlop() {
     return () => clearTimeout(t);
   }, [plot, ready]);
 
-  // Keyboard: R rotates, Delete removes, arrows nudge, Escape deselects.
+  // While the drawer covers the stage on desktop, center the view in what's left.
+  useEffect(() => {
+    const engine = engineRef.current;
+    if (!engine) return;
+    const update = () => {
+      const wide = window.matchMedia("(min-width: 1001px)").matches;
+      const w = viewportRef.current?.clientWidth ?? 0;
+      engine.setInsetLeft(drawer && wide ? Math.min(360, w) : 0);
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [drawer, ready]);
+
+  // Keyboard: / adds gear, R rotates, Delete removes, arrows nudge, Escape deselects.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const engine = engineRef.current;
-      if (!engine || selectedId === null) return;
-      if ((e.target as HTMLElement).closest("input, select, textarea")) return;
+      if (!engine) return;
+      if ((e.target as HTMLElement).closest("input, select, textarea, [role=dialog]")) return;
+      if (e.key === "/" && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        setDrawer(true);
+        return;
+      }
+      if (selectedId === null) return;
       const arrows: Record<string, [number, number]> = {
         ArrowLeft: [-1, 0],
         ArrowRight: [1, 0],
@@ -126,6 +146,22 @@ export function StagePlop() {
     const stage = clampStage(w, d);
     engineRef.current?.setStage(stage.w, stage.d);
     setPlot((p) => ({ ...p, stage }));
+  };
+
+  const plop = (id: string) => {
+    engineRef.current?.plop(id);
+    setRecent((r) => {
+      const next = [id, ...r.filter((x) => x !== id)].slice(0, RECENT_MAX);
+      try {
+        localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const closeDrawer = () => {
+    setDrawer(false);
+    addRef.current?.focus();
   };
 
   const changeMode = (m: ViewMode) => {
@@ -166,90 +202,6 @@ export function StagePlop() {
         </div>
       </header>
 
-      <aside className="panel panel-gear" aria-label="Stage and Gear" data-hidden={tab !== "gear"}>
-        <span
-          className="tape tape-magenta"
-          style={{ top: -14, right: -12, transform: "rotate(7deg)" }}
-          aria-hidden="true"
-        />
-        <div className="panel-head">
-          <h2 className="h2">Stage</h2>
-          <button
-            className="btn btn-sm"
-            onClick={() => {
-              engineRef.current?.clear();
-              say("Stage Cleared");
-            }}
-          >
-            Clear Stage
-          </button>
-        </div>
-        <div className="stage-settings">
-          <label className="grid gap-1">
-            <span className="caption">Size</span>
-            <select
-              className="field"
-              value={presetId}
-              onChange={(e) => {
-                const p = STAGE_PRESETS.find((x) => x.id === e.target.value);
-                if (p) setStage(p.w, p.d);
-              }}
-            >
-              {STAGE_PRESETS.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label}
-                </option>
-              ))}
-              <option value="custom">Custom</option>
-            </select>
-          </label>
-          <div className="grid grid-cols-2 gap-2">
-            <label className="grid gap-1">
-              <span className="caption">Width (ft)</span>
-              <input
-                className="field"
-                type="number"
-                min={6}
-                max={60}
-                key={`w${plot.stage.w}`}
-                defaultValue={plot.stage.w}
-                onBlur={(e) => setStage(+e.target.value, plot.stage.d)}
-              />
-            </label>
-            <label className="grid gap-1">
-              <span className="caption">Depth (ft)</span>
-              <input
-                className="field"
-                type="number"
-                min={6}
-                max={40}
-                key={`d${plot.stage.d}`}
-                defaultValue={plot.stage.d}
-                onBlur={(e) => setStage(plot.stage.w, +e.target.value)}
-              />
-            </label>
-          </div>
-          <div>
-            <label className="check">
-              <input
-                type="checkbox"
-                checked={snap}
-                onChange={(e) => {
-                  engineRef.current?.setSnap(e.target.checked);
-                  setSnap(e.target.checked);
-                }}
-              />
-              Snap to 6 in Grid
-            </label>
-          </div>
-        </div>
-        <div className="panel-head">
-          <h2 className="h2">Gear</h2>
-          <span className="caption">Tap to Plop</span>
-        </div>
-        <GearLibrary onPlop={(id) => engineRef.current?.plop(id)} />
-      </aside>
-
       <main className="stage-wrap">
         <span
           className="tape tape-cyan"
@@ -267,8 +219,17 @@ export function StagePlop() {
               </div>
             </div>
           )}
-          <div className="stage-top">
+          <div className={`stage-top${drawer ? " beside-drawer" : ""}`}>
             <div className="flex flex-wrap items-center gap-2">
+              <button
+                ref={addRef}
+                className="btn btn-sm btn-primary"
+                aria-expanded={drawer}
+                aria-keyshortcuts="/"
+                onClick={() => (drawer ? closeDrawer() : setDrawer(true))}
+              >
+                <span aria-hidden="true">+</span> Add Gear
+              </button>
               <div className="seg seg-sm" role="group" aria-label="View">
                 <button aria-pressed={mode === "plot"} onClick={() => changeMode("plot")}>
                   Plot
@@ -288,9 +249,19 @@ export function StagePlop() {
                   </button>
                 </div>
               )}
-              <span className="tag">
-                {plot.stage.w} × {plot.stage.d} ft
-              </span>
+              <StageSettings
+                stage={plot.stage}
+                snap={snap}
+                onStage={setStage}
+                onSnap={(v) => {
+                  engineRef.current?.setSnap(v);
+                  setSnap(v);
+                }}
+                onClear={() => {
+                  engineRef.current?.clear();
+                  say("Stage Cleared");
+                }}
+              />
             </div>
             <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
               <div className="seg seg-sm" role="group" aria-label="Zoom">
@@ -328,14 +299,14 @@ export function StagePlop() {
           </div>
           <div className="hint">
             {mode === "plot"
-              ? "drag to move · drag the dot to rotate · arrows nudge"
+              ? "/ adds gear · drag to move · drag the dot to rotate"
               : "drag the floor to spin · Plot for fine moves"}
           </div>
           <button className="rot-handle" ref={rotRef} aria-label="Drag to Rotate" hidden>
             ↻
           </button>
           {selected && (
-            <div className="inspector">
+            <div className={`inspector${drawer ? " beside-drawer" : ""}`}>
               <div className="flex items-baseline justify-between gap-2">
                 <span className="font-display text-base leading-5 font-bold tracking-tight">
                   {GEAR[selected.type].name}
@@ -386,21 +357,11 @@ export function StagePlop() {
               </div>
             </div>
           )}
+          <GearDrawer open={drawer} recent={recent} onPlop={plop} onClose={closeDrawer} />
         </div>
       </main>
 
-      <div className="tabs">
-        <div className="seg" role="group" aria-label="Panels">
-          <button aria-pressed={tab === "gear"} onClick={() => setTab("gear")}>
-            Gear
-          </button>
-          <button aria-pressed={tab === "inputs"} onClick={() => setTab("inputs")}>
-            Inputs
-          </button>
-        </div>
-      </div>
-
-      <aside className="panel panel-inputs" aria-label="Input List" data-hidden={tab !== "inputs"}>
+      <aside className="panel panel-inputs" aria-label="Input List">
         <div className="panel-head">
           <h2 className="h2">Input List</h2>
           <span className="caption">Builds Itself</span>
