@@ -383,6 +383,31 @@
     color: var(--paper-50);
   }
 
+  .rig-remove {
+    flex: none;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--ink-600);
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .rig-remove:hover {
+    border-color: var(--ink-900);
+    color: var(--ink-900);
+  }
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .seg > button[role="tab"][aria-selected="true"] {
+    background: var(--ink-900);
+    color: var(--paper-50);
+  }
+
   /* Add Gear: slides over the stage from the left; a bottom sheet on phones. */
   .drawer {
     position: absolute;
