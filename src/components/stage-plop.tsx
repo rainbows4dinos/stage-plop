@@ -2,7 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 import { defOf, type CustomGear } from "@/lib/gear";
-import { EXAMPLE_PLOT, clampStage, computeInputs, inputListText, parsePlot, type Plot } from "@/lib/plot";
+import { EXAMPLE_PLOT, clampStage, computeInputs, inputListText, type Plot } from "@/lib/plot";
+import {
+  LEGACY_PLOT_KEY,
+  PLOTS_KEY,
+  addPlot,
+  blankPlot,
+  currentOf,
+  hasUnsaved,
+  openShared,
+  parseLocal,
+  removePlot,
+  switchTo,
+  updateCurrent,
+  type LocalPlot,
+  type LocalState,
+} from "@/lib/local-plots";
 import { ANGLES, StageEngine, type ViewMode } from "@/lib/stage/engine";
 import { setMuted } from "@/lib/stage/sound";
 import {
@@ -18,10 +33,12 @@ import {
 } from "@/lib/library";
 import { GearDrawer, type CustomFormState } from "./gear-drawer";
 import { InputList } from "./input-list";
+import { PlotsMenu } from "./plots-menu";
+import { ShareMenu, type SaveStatus } from "./share-menu";
 import { StageSettings } from "./stage-settings";
 
-// Plots save in this browser for now. Shareable links come with Supabase.
-const STORAGE_KEY = "stage-plop-v1";
+// Plots live in this browser; shared ones also live online (see src/lib/share.ts).
+const AUTOSAVE_MS = 1200;
 const RIG_KEY = "stage-plop-rig";
 const SETUPS_KEY = "stage-plop-setups";
 /** Before Your Rig there was a short Recent list; its ids seed the rig once. */
@@ -40,6 +57,16 @@ const writeJSON = (key: string, value: unknown) => {
   } catch {}
 };
 const DISPLAY_FONT = '"Hanken Grotesk Variable", sans-serif';
+
+/** A shared plot as it is online, or null when it can't be fetched. */
+async function fetchShared(id: string): Promise<{ plot: Plot; updatedAt: string } | null> {
+  try {
+    const res = await fetch(`/api/plots/${id}`, { cache: "no-store" });
+    return res.ok ? await res.json() : null;
+  } catch {
+    return null;
+  }
+}
 
 export function StagePlop() {
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -62,6 +89,9 @@ export function StagePlop() {
   const [setups, setSetups] = useState<Setup[]>([]);
   const [customForm, setCustomForm] = useState<CustomFormState>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [local, setLocal] = useState<LocalState | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>({ state: "idle" });
+  const current = local ? currentOf(local) : null;
 
   const selected = plot.items.find((i) => i.id === selectedId) ?? null;
   const selectedDef = selected ? defOf(selected) : undefined;
@@ -74,18 +104,18 @@ export function StagePlop() {
         await Promise.race([document.fonts.load(`800 150px ${DISPLAY_FONT}`), new Promise((r) => setTimeout(r, 1500))]);
       } catch {}
       if (cancelled || !viewportRef.current || !labelsRef.current || !rotRef.current) return;
-      let saved: Plot | null = null;
-      try {
-        saved = parsePlot(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null"));
-      } catch {}
-      const initial = saved ?? EXAMPLE_PLOT;
-      // Your Rig: what's been saved, plus anything on a saved plot (not the example).
+      const storedPlots = readJSON(PLOTS_KEY);
+      const legacy = readJSON(LEGACY_PLOT_KEY);
+      const startLocal = parseLocal(storedPlots, legacy);
+      const initial = currentOf(startLocal).plot;
+      // Your Rig: what's been saved, plus gear on your own plots (the example doesn't count).
       const oldRecent = readJSON(OLD_RECENT_KEY);
+      const ownPlots = storedPlots || legacy ? startLocal.plots.map((p) => p.plot) : [];
       setRig(
         parseRig([
           ...((readJSON(RIG_KEY) as unknown[] | null) ?? []),
           ...(Array.isArray(oldRecent) ? oldRecent.map((type) => ({ type })) : []),
-          ...(saved?.items ?? []).map(({ type, custom }) => ({ type, custom })),
+          ...ownPlots.flatMap((pl) => pl.items.map(({ type, custom }) => ({ type, custom }))),
         ]),
       );
       setSetups(parseSetups(readJSON(SETUPS_KEY)));
@@ -109,7 +139,19 @@ export function StagePlop() {
       engine.load(initial.items, initial.stage);
       engineRef.current = engine;
       setPlot(initial);
+      setLocal(startLocal);
       setReady(true);
+      // A shared plot may have changed online since this browser last saw it.
+      const cur = currentOf(startLocal);
+      if (cur.link) {
+        const fresh = await fetchShared(cur.link.id);
+        if (!cancelled && fresh && fresh.updatedAt !== cur.serverUpdatedAt && !cur.unsaved) {
+          const next = openShared(startLocal, cur.link, fresh.plot, fresh.updatedAt);
+          engine.load(currentOf(next).plot.items, currentOf(next).plot.stage);
+          setPlot(currentOf(next).plot);
+          setLocal(next);
+        }
+      }
     })();
     return () => {
       cancelled = true;
@@ -118,16 +160,75 @@ export function StagePlop() {
     };
   }, []);
 
-  // Save after each change (this browser only).
+  // Edits to the working plot go into the plot list (and mark shared plots unsaved).
   useEffect(() => {
-    if (!ready) return;
-    const t = setTimeout(() => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(plot));
-      } catch {}
-    }, 300);
+    if (!ready || !current || plot === current.plot) return;
+    const t = setTimeout(() => setLocal((s) => s && updateCurrent(s, { plot })), 250);
     return () => clearTimeout(t);
-  }, [plot, ready]);
+  }, [plot, ready, current]);
+
+  // Keep the plot list in this browser.
+  useEffect(() => {
+    if (local) writeJSON(PLOTS_KEY, local);
+  }, [local]);
+
+  // Shared plots save online a moment after each change.
+  const saveOnline = async (lp: LocalPlot) => {
+    if (!lp.link) return;
+    setSaveStatus({ state: "saving" });
+    const stamp = lp.updatedAt;
+    try {
+      const res = await fetch(`/api/plots/${lp.link.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${lp.link.token}` },
+        body: JSON.stringify({ plot: lp.plot }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const message =
+          res.status === 401
+            ? "This edit link was replaced. Ask whoever made the new one to send it."
+            : (body.error ?? "Couldn't reach the server. Your changes are kept in this browser.");
+        setSaveStatus({ state: "error", message });
+        return;
+      }
+      setLocal((s) =>
+        s
+          ? {
+              ...s,
+              plots: s.plots.map((p) =>
+                p.key === lp.key
+                  ? { ...p, serverUpdatedAt: body.updatedAt, unsaved: p.updatedAt === stamp ? false : p.unsaved }
+                  : p,
+              ),
+            }
+          : s,
+      );
+      setSaveStatus({ state: "saved" });
+    } catch {
+      setSaveStatus({ state: "error", message: "You're offline. Your changes are kept in this browser." });
+    }
+  };
+  useEffect(() => {
+    if (!current || !hasUnsaved(current)) return;
+    const t = setTimeout(() => saveOnline(current), AUTOSAVE_MS);
+    return () => clearTimeout(t);
+  }, [current]);
+
+  // Save before the tab closes if there's anything pending.
+  useEffect(() => {
+    const flush = () => {
+      if (!current || !hasUnsaved(current) || !current.link) return;
+      fetch(`/api/plots/${current.link.id}`, {
+        method: "PUT",
+        keepalive: true,
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${current.link.token}` },
+        body: JSON.stringify({ plot: current.plot }),
+      }).catch(() => {});
+    };
+    window.addEventListener("pagehide", flush);
+    return () => window.removeEventListener("pagehide", flush);
+  }, [current]);
 
   // While the drawer covers the stage on desktop, center the view in what's left.
   useEffect(() => {
@@ -229,6 +330,60 @@ export function StagePlop() {
     say(squeezed ? `Squeezed ${setup.name} to Fit` : `Dropped ${setup.name}`);
   };
 
+  /* ---------- Plots in this browser ---------- */
+
+  const showPlot = (next: LocalState) => {
+    const lp = currentOf(next);
+    engineRef.current?.load(lp.plot.items, lp.plot.stage);
+    setPlot(lp.plot);
+    setLocal(next);
+    setSaveStatus({ state: "idle" });
+  };
+
+  const sharePlot = async () => {
+    try {
+      const res = await fetch("/api/plots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plot }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setSaveStatus({ state: "error", message: body.error ?? "Couldn't make links. Try again in a moment." });
+        return;
+      }
+      setLocal(
+        (s) =>
+          s &&
+          updateCurrent(
+            s,
+            { plot, link: { id: body.id, token: body.token }, serverUpdatedAt: body.updatedAt, unsaved: false },
+            false,
+          ),
+      );
+      setSaveStatus({ state: "saved" });
+      say("Links Ready");
+    } catch {
+      setSaveStatus({ state: "error", message: "You're offline. Try again when you're connected." });
+    }
+  };
+
+  const newEditLink = async () => {
+    const link = current?.link;
+    if (!link) return;
+    const res = await fetch(`/api/plots/${link.id}/token`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${link.token}` },
+    }).catch(() => null);
+    const body = await res?.json().catch(() => ({}));
+    if (!res?.ok) {
+      say(body?.error ?? "Couldn't make a new link.");
+      return;
+    }
+    setLocal((s) => s && updateCurrent(s, { link: { id: link.id, token: body.token } }, false));
+    say("New Edit Link Ready");
+  };
+
   const closeDrawer = () => {
     setDrawer(false);
     setCustomForm(null);
@@ -271,6 +426,22 @@ export function StagePlop() {
           <span className="tag tag-ink">By Seeens</span>
         </div>
         <div className="head-controls">
+          {local && (
+            <PlotsMenu
+              plots={local.plots}
+              current={local.current}
+              onSwitch={(key) => showPlot(switchTo(local, key))}
+              onNew={() => {
+                showPlot(addPlot(local, { plot: blankPlot(plot.stage) }));
+                setDrawer(true);
+              }}
+              onRemove={(key) => {
+                const next = removePlot(local, key);
+                if (next.current !== local.current) showPlot(next);
+                else setLocal(next);
+              }}
+            />
+          )}
           <input
             className="field"
             id="band"
@@ -278,6 +449,13 @@ export function StagePlop() {
             placeholder="Band Name"
             value={plot.band}
             onChange={(e) => setPlot((p) => ({ ...p, band: e.target.value }))}
+          />
+          <ShareMenu
+            link={current?.link}
+            status={saveStatus}
+            onShare={sharePlot}
+            onNewEditLink={newEditLink}
+            onRetry={() => current && saveOnline(current)}
           />
           <button className="btn btn-primary" onClick={copyInputs}>
             Copy Input List
