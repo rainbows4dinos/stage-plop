@@ -1,18 +1,44 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { GEAR, defOf, type CustomGear } from "@/lib/gear";
+import { defOf, type CustomGear } from "@/lib/gear";
 import { EXAMPLE_PLOT, clampStage, computeInputs, inputListText, parsePlot, type Plot } from "@/lib/plot";
 import { ANGLES, StageEngine, type ViewMode } from "@/lib/stage/engine";
 import { setMuted } from "@/lib/stage/sound";
+import {
+  SETUPS_MAX,
+  addToRig,
+  makeSetup,
+  parseRig,
+  parseSetups,
+  placeSetup,
+  removeFromRig,
+  type RigEntry,
+  type Setup,
+} from "@/lib/library";
 import { GearDrawer, type CustomFormState } from "./gear-drawer";
 import { InputList } from "./input-list";
 import { StageSettings } from "./stage-settings";
 
 // Plots save in this browser for now. Shareable links come with Supabase.
 const STORAGE_KEY = "stage-plop-v1";
-const RECENT_KEY = "stage-plop-recent";
-const RECENT_MAX = 6;
+const RIG_KEY = "stage-plop-rig";
+const SETUPS_KEY = "stage-plop-setups";
+/** Before Your Rig there was a short Recent list; its ids seed the rig once. */
+const OLD_RECENT_KEY = "stage-plop-recent";
+
+const readJSON = (key: string): unknown => {
+  try {
+    return JSON.parse(localStorage.getItem(key) ?? "null");
+  } catch {
+    return null;
+  }
+};
+const writeJSON = (key: string, value: unknown) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {}
+};
 const DISPLAY_FONT = '"Hanken Grotesk Variable", sans-serif';
 
 export function StagePlop() {
@@ -32,7 +58,8 @@ export function StagePlop() {
   const [labels, setLabels] = useState(true);
   const [sound, setSound] = useState(true);
   const [drawer, setDrawer] = useState(false);
-  const [recent, setRecent] = useState<string[]>([]);
+  const [rig, setRig] = useState<RigEntry[]>([]);
+  const [setups, setSetups] = useState<Setup[]>([]);
   const [customForm, setCustomForm] = useState<CustomFormState>(null);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -52,10 +79,16 @@ export function StagePlop() {
         saved = parsePlot(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null"));
       } catch {}
       const initial = saved ?? EXAMPLE_PLOT;
-      try {
-        const r = JSON.parse(localStorage.getItem(RECENT_KEY) ?? "[]");
-        if (Array.isArray(r)) setRecent(r.filter((id) => typeof id === "string" && GEAR[id]).slice(0, RECENT_MAX));
-      } catch {}
+      // Your Rig: what's been saved, plus anything on a saved plot (not the example).
+      const oldRecent = readJSON(OLD_RECENT_KEY);
+      setRig(
+        parseRig([
+          ...((readJSON(RIG_KEY) as unknown[] | null) ?? []),
+          ...(Array.isArray(oldRecent) ? oldRecent.map((type) => ({ type })) : []),
+          ...(saved?.items ?? []).map(({ type, custom }) => ({ type, custom })),
+        ]),
+      );
+      setSetups(parseSetups(readJSON(SETUPS_KEY)));
       let engine: StageEngine;
       try {
         engine = new StageEngine(
@@ -150,15 +183,50 @@ export function StagePlop() {
     setPlot((p) => ({ ...p, stage }));
   };
 
-  const plop = (id: string) => {
-    engineRef.current?.plop(id);
-    setRecent((r) => {
-      const next = [id, ...r.filter((x) => x !== id)].slice(0, RECENT_MAX);
-      try {
-        localStorage.setItem(RECENT_KEY, JSON.stringify(next));
-      } catch {}
+  const updateRig = (fn: (r: RigEntry[]) => RigEntry[]) =>
+    setRig((r) => {
+      const next = fn(r);
+      writeJSON(RIG_KEY, next);
       return next;
     });
+
+  const plop = (entry: RigEntry) => {
+    engineRef.current?.plop(entry.type, entry.custom);
+    updateRig((r) => addToRig(r, [entry]));
+  };
+
+  const updateSetups = (fn: (s: Setup[]) => Setup[]) =>
+    setSetups((s) => {
+      const next = fn(s).slice(0, SETUPS_MAX);
+      writeJSON(SETUPS_KEY, next);
+      return next;
+    });
+
+  const saveSetup = (name: string) => {
+    const setup = makeSetup(
+      name || `${plot.band || "Band"} Setup`,
+      plot.items,
+      plot.stage,
+      `s${Date.now().toString(36)}`,
+    );
+    updateSetups((s) => [setup, ...s]);
+    say(`Saved ${setup.name}`);
+  };
+
+  const dropSetup = (id: string, replace: boolean) => {
+    const setup = setups.find((s) => s.id === id);
+    const engine = engineRef.current;
+    if (!setup || !engine) return;
+    const items = placeSetup(setup, plot.stage, replace ? [] : plot.items);
+    engine.addItems(items, replace);
+    updateRig((r) =>
+      addToRig(
+        r,
+        items.map(({ type, custom }) => ({ type, custom })),
+      ),
+    );
+    const squeezed = setup.stage.w > plot.stage.w || setup.stage.d > plot.stage.d;
+    say(squeezed ? `Squeezed ${setup.name} to Fit` : `Dropped ${setup.name}`);
   };
 
   const closeDrawer = () => {
@@ -174,7 +242,7 @@ export function StagePlop() {
       setCustomForm(null);
       say(`Saved ${c.name}`);
     } else {
-      engineRef.current?.plop("custom", c);
+      plop({ type: "custom", custom: c });
       setCustomForm(null);
     }
   };
@@ -384,9 +452,18 @@ export function StagePlop() {
           )}
           <GearDrawer
             open={drawer}
-            recent={recent}
+            rig={rig}
+            setups={setups}
+            stageEmpty={plot.items.length === 0}
             customForm={customForm}
             onPlop={plop}
+            onRemoveFromRig={(key) => updateRig((r) => removeFromRig(r, key))}
+            onSaveSetup={saveSetup}
+            onDropSetup={dropSetup}
+            onRenameSetup={(id, name) =>
+              updateSetups((all) => all.map((s) => (s.id === id ? { ...s, name: name.trim().slice(0, 60) } : s)))
+            }
+            onDeleteSetup={(id) => updateSetups((all) => all.filter((s) => s.id !== id))}
             onCustom={saveCustom}
             onCustomForm={setCustomForm}
             onClose={closeDrawer}

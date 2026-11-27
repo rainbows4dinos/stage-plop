@@ -260,6 +260,33 @@ export class StageEngine {
     this.changed();
   }
 
+  /**
+   * Drop several pieces at once (a saved setup), one after another so each
+   * gets its plop. `replace` clears the stage first.
+   */
+  addItems(items: Omit<PlotItem, "id">[], replace: boolean) {
+    if (replace) {
+      this.pieces.forEach((p) => {
+        this.scene.remove(p.holder);
+        p.labelEl.remove();
+      });
+      this.pieces = [];
+    }
+    this.select(null);
+    const now = performance.now();
+    const gap = this.reduceMotion ? 0 : Math.min(70, 900 / Math.max(1, items.length));
+    // risers first, so gear placed on them lands on top
+    const ordered = [...items].sort((a, b) => Number(!!defOf(b)?.riser) - Number(!!defOf(a)?.riser));
+    ordered.forEach((it, i) => {
+      if (!defOf(it)) return;
+      const p = this.makePiece(it.type, { ...it, id: undefined });
+      if (!this.reduceMotion) p.drop = { t0: now + i * gap };
+      if (i < 10) window.setTimeout(() => plopSound(p.def.riser ? 0.6 : 0.9 + (i % 3) * 0.12), 170 + i * gap);
+    });
+    this.pieces.forEach((q) => this.place(q));
+    this.changed();
+  }
+
   select(id: number | null) {
     this.selected = this.pieces.find((p) => p.id === id) ?? null;
     this.cb.onSelect(this.selected?.id ?? null);
@@ -897,6 +924,13 @@ export class StageEngine {
     };
 
     for (const p of this.pieces) {
+      if (p.drop && now < p.drop.t0) {
+        // queued in a setup drop: not here yet
+        p.holder.visible = false;
+        p.labelEl.classList.add("dim");
+        continue;
+      }
+      p.holder.visible = true;
       if (p.drop) {
         const t = Math.min(1, (now - p.drop.t0) / 520);
         p.holder.position.set(p.x, p.base + (1 - bounce(t)) * 5, p.z);

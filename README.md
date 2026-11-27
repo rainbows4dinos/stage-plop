@@ -9,12 +9,14 @@ Stage plots that don't suck. Plop gear on a stage, move it around, and the input
 ## What works now
 
 - Gear library with real footprints: kits and a riser, guitar and bass rigs, Pedaltrain boards, keys, vocal mics, wedges, DI boxes and power drops.
-- **Add Gear** (press `/`): search by name, brand or nickname ("fridge" finds the SVT), forgiving of typos. Arrow keys and Enter plop gear without closing, so you can add a whole backline in a row. Recent picks show first; browsing by category is in the same drawer, which is a bottom sheet on phones.
+- **Add Gear** (press `/`): search by name, brand or nickname ("fridge" finds the SVT), forgiving of typos. Arrow keys and Enter plop gear without closing, so you can add a whole backline in a row. Browsing by category is in the same drawer, which is a bottom sheet on phones.
 - **Plot view** (default) for arranging: straight overhead, drag to move, drag the magenta dot to rotate (15° steps), alignment guides, a 6 in snap grid, arrow keys to nudge.
 - **3D view** for looking: drag empty space to orbit, or jump between four preset angles.
 - The input list, monitor mixes and power drops come from what's on the stage, in engineer order (drums, bass, guitar, keys, vocals). **Copy Input List** copies them as tab-separated text.
 - **Generic pieces** in every category (Guitar Combo 1x12, Head on 4x10 Cab, Synth on a Table, Laptop on a Stand, Percussion Table, Instrument Mic…) for gear that isn't listed by name.
 - **Custom pieces** for anything else: name it, pick a shape, enter the size (in or cm) and inputs. Custom pieces save with the plot, can be edited and duplicated, and their inputs land in the input list.
+- **Your Rig:** everything you've plopped, custom pieces included, sits at the top of Add Gear, newest first. Your custom pieces also show up in search.
+- **Setups:** save the whole stage as a named setup (Full Backline, Acoustic Duo) and add it to any plot or replace the plot with it. A setup from a bigger stage squeezes to fit. Rig and setups save in the browser for now and move to the band with share links (#11).
 - Stage size, snap and Clear Stage live on the stage size tag.
 - Plots save in the browser.
 
