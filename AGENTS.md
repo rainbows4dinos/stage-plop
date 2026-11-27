@@ -2,7 +2,7 @@
 
 Read [README.md](README.md) for scope.
 
-- Stage Plop is a sibling of Seeens, not part of it: separate repo, separate Vercel and (later) Supabase projects. It must work without an account.
+- Stage Plop is a sibling of Seeens, not part of it: separate repo, separate Vercel project and its own Upstash Redis for share links. It must work without an account.
 - Brand: the tokens at the top of `src/app/globals.css` are copied from Seeens (`rainbows4dinos/seeens`, `src/app/globals.css`). Keep names identical so they're easy to diff. Ink is the primary accent; plate colors are for highlights and tags (cyan = DI, yellow = mixes, magenta = selection). Square corners, Hanken Grotesk for display, IBM Plex Mono for UI.
 - Write button and form labels in APA title case. Calls to action lead with a verb.
 - Gear is data in `src/data/gear/*.json` (sizes in inches); see README, Adding Gear. Never rename a shipped gear `id`: saved plots use it.

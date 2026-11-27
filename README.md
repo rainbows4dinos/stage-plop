@@ -31,19 +31,19 @@ Stage plots that don't suck. Plop gear on a stage, move it around, and the input
 
 ```sh
 npm install
-cp .env.example .env.local   # then set PLOT_STORE=memory, or fill in Supabase
+cp .env.example .env.local   # then set PLOT_STORE=memory, or fill in Upstash
 npm run dev
 ```
 
-Without Supabase settings, sharing is off (the app says so) and everything else works. `PLOT_STORE=memory` keeps shared plots in memory for local testing; they're gone when the server restarts.
+Without a store, sharing is off (the app says so) and everything else works. `PLOT_STORE=memory` keeps shared plots in memory for local testing; they're gone when the server restarts.
 
 ### Share links in production
 
-1. Create a Supabase project for Stage Plop (separate from Seeens).
-2. Run `supabase/migrations/20261127000000_plots.sql`: paste it into the SQL editor, or `supabase link` then `supabase db push`.
-3. In Vercel, add `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (the service role or secret key, never the anon or publishable one) and `RATE_LIMIT_SALT` (any long random string), then redeploy.
+1. In the Vercel project, go to **Storage** (or the Marketplace), add **Upstash Redis** on the free plan and connect it to this project. That sets `KV_REST_API_URL` and `KV_REST_API_TOKEN`.
+2. Add `RATE_LIMIT_SALT` (any long random string).
+3. Redeploy.
 
-The browser never talks to Supabase. Everything goes through `/api/plots`, which checks edit tokens (only their SHA-256 is stored), limits new plots to 20 an hour per address, and caps plots at 300 pieces and 200 KB. Row level security is on with no policies, so the public anon key can't read the table even if it leaks.
+The browser never talks to Redis. Everything goes through `/api/plots`, which checks edit tokens (only their SHA-256 is stored), limits new plots to 20 an hour per address, and caps plots at 300 pieces and 200 KB. Each plot is one key (`plot:<id>`); a typical plot is a few KB.
 
 ## Checks
 
@@ -55,7 +55,7 @@ Checks: `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test`,
 - `src/lib/gear.ts` loads the catalog; `src/lib/gear-schema.ts` defines and checks it.
 - `src/lib/plot.ts` plot data and everything derived from it (input list, copy text, parsing saved plots). Pure, tested in `plot.test.ts`.
 - `src/lib/stage/` the Three.js side: `engine.ts` (scene, camera, pointer handling), `builders.ts` (gear models), `sound.ts` (the plop).
-- `src/lib/share.ts` share link ids, tokens and checks; `src/lib/local-plots.ts` the plots kept in the browser; `src/lib/server/` the plot store (Supabase or memory) used by `src/app/api/plots/`.
+- `src/lib/share.ts` share link ids, tokens and checks; `src/lib/local-plots.ts` the plots kept in the browser; `src/lib/server/` the plot store (Upstash Redis or memory) used by `src/app/api/plots/`.
 - `src/components/` the React UI around the stage; `src/app/p/[id]` is the view page and `src/app/edit/[id]` opens edit links.
 
 ## Adding Gear

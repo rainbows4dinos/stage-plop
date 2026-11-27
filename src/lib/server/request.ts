@@ -1,7 +1,7 @@
 import "server-only";
 import { sha256 } from "@/lib/share";
 
-/** A salted hash of the caller's address, for rate limiting. Never stored in the clear. */
+/** A salted hash of the caller's address, for rate limiting. Kept an hour at most. */
 export async function creatorHash(req: Request): Promise<string | null> {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip");
   if (!ip) return null;

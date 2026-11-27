@@ -1,12 +1,18 @@
-// Where shared plots live. Supabase in production; an in-memory store for
-// local development and tests (PLOT_STORE=memory). With neither set up,
-// sharing reports itself unavailable and the rest of the app still works.
+// Where shared plots live. Upstash Redis in production (free tier, never
+// pauses, added from the Vercel Marketplace); an in-memory store for local
+// development and tests (PLOT_STORE=memory). With neither set up, sharing
+// reports itself unavailable and the rest of the app still works.
+//
+// Keys:
+//   plot:<id>                    JSON PlotRecord
+//   rl:create:<hash>:<hour>      count of new plots from one address this hour
 import "server-only";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { Redis } from "@upstash/redis";
 import type { Plot } from "@/lib/plot";
 
 export type PlotRecord = {
   id: string;
+  /** SHA-256 of the edit token, hex. The token itself is never stored. */
   editTokenHash: string;
   plot: Plot;
   createdAt: string;
@@ -15,91 +21,58 @@ export type PlotRecord = {
 
 export interface PlotStore {
   get(id: string): Promise<PlotRecord | null>;
-  create(r: { id: string; editTokenHash: string; plot: Plot; creatorHash: string | null }): Promise<PlotRecord>;
+  /** Returns null if the id is already taken. */
+  create(r: { id: string; editTokenHash: string; plot: Plot }): Promise<PlotRecord | null>;
   update(id: string, plot: Plot): Promise<PlotRecord | null>;
   setTokenHash(id: string, editTokenHash: string): Promise<void>;
-  /** Plots made from one address since a time, for rate limiting. */
-  countCreatedSince(creatorHash: string, since: Date): Promise<number>;
+  /** Count one new plot from an address and say whether it's within the hourly limit. */
+  allowCreate(creatorHash: string, perHour: number): Promise<boolean>;
 }
 
-type Row = {
-  id: string;
-  edit_token_hash: string;
-  data: Plot;
-  created_at: string;
-  updated_at: string;
-};
-const fromRow = (r: Row): PlotRecord => ({
-  id: r.id,
-  editTokenHash: r.edit_token_hash,
-  plot: r.data,
-  createdAt: r.created_at,
-  updatedAt: r.updated_at,
-});
+const hourBucket = () => Math.floor(Date.now() / 3_600_000);
+const plotKey = (id: string) => `plot:${id}`;
 
-class SupabaseStore implements PlotStore {
-  constructor(private db: SupabaseClient) {}
+class RedisStore implements PlotStore {
+  constructor(private redis: Redis) {}
   async get(id: string) {
-    const { data, error } = await this.db.from("plots").select("*").eq("id", id).maybeSingle();
-    if (error) throw error;
-    return data ? fromRow(data as Row) : null;
+    // the client parses JSON values for us
+    return (await this.redis.get<PlotRecord>(plotKey(id))) ?? null;
   }
-  async create(r: { id: string; editTokenHash: string; plot: Plot; creatorHash: string | null }) {
-    const { data, error } = await this.db
-      .from("plots")
-      .insert({
-        id: r.id,
-        edit_token_hash: r.editTokenHash,
-        band: r.plot.band,
-        data: r.plot,
-        creator_hash: r.creatorHash,
-      })
-      .select("*")
-      .single();
-    if (error) throw error;
-    return fromRow(data as Row);
+  async create(r: { id: string; editTokenHash: string; plot: Plot }) {
+    const now = new Date().toISOString();
+    const rec: PlotRecord = { ...r, createdAt: now, updatedAt: now };
+    const ok = await this.redis.set(plotKey(r.id), rec, { nx: true });
+    return ok ? rec : null;
   }
   async update(id: string, plot: Plot) {
-    const { data, error } = await this.db
-      .from("plots")
-      .update({ data: plot, band: plot.band, updated_at: new Date().toISOString() })
-      .eq("id", id)
-      .select("*")
-      .maybeSingle();
-    if (error) throw error;
-    return data ? fromRow(data as Row) : null;
+    const rec = await this.get(id);
+    if (!rec) return null;
+    const next = { ...rec, plot, updatedAt: new Date().toISOString() };
+    await this.redis.set(plotKey(id), next, { xx: true });
+    return next;
   }
   async setTokenHash(id: string, editTokenHash: string) {
-    const { error } = await this.db.from("plots").update({ edit_token_hash: editTokenHash }).eq("id", id);
-    if (error) throw error;
+    const rec = await this.get(id);
+    if (rec) await this.redis.set(plotKey(id), { ...rec, editTokenHash }, { xx: true });
   }
-  async countCreatedSince(creatorHash: string, since: Date) {
-    const { count, error } = await this.db
-      .from("plots")
-      .select("id", { count: "exact", head: true })
-      .eq("creator_hash", creatorHash)
-      .gte("created_at", since.toISOString());
-    if (error) throw error;
-    return count ?? 0;
+  async allowCreate(creatorHash: string, perHour: number) {
+    const key = `rl:create:${creatorHash}:${hourBucket()}`;
+    const [count] = await this.redis.multi().incr(key).expire(key, 3600).exec<[number, number]>();
+    return count <= perHour;
   }
 }
 
 class MemoryStore implements PlotStore {
-  private rows = new Map<string, PlotRecord & { creatorHash: string | null }>();
+  private rows = new Map<string, PlotRecord>();
+  private counts = new Map<string, number>();
   async get(id: string) {
     const r = this.rows.get(id);
     return r ? structuredClone(r) : null;
   }
-  async create(r: { id: string; editTokenHash: string; plot: Plot; creatorHash: string | null }) {
+  async create(r: { id: string; editTokenHash: string; plot: Plot }) {
+    if (this.rows.has(r.id)) return null;
     const now = new Date().toISOString();
-    const rec = {
-      id: r.id,
-      editTokenHash: r.editTokenHash,
-      plot: r.plot,
-      createdAt: now,
-      updatedAt: now,
-      creatorHash: r.creatorHash,
-    };
+    const rec = { ...r, createdAt: now, updatedAt: now };
     this.rows.set(r.id, rec);
     return structuredClone(rec);
   }
@@ -114,9 +87,11 @@ class MemoryStore implements PlotStore {
     const r = this.rows.get(id);
     if (r) r.editTokenHash = editTokenHash;
   }
-  async countCreatedSince(creatorHash: string, since: Date) {
-    return [...this.rows.values()].filter((r) => r.creatorHash === creatorHash && new Date(r.createdAt) >= since)
-      .length;
+  async allowCreate(creatorHash: string, perHour: number) {
+    const key = `${creatorHash}:${hourBucket()}`;
+    const n = (this.counts.get(key) ?? 0) + 1;
+    this.counts.set(key, n);
+    return n <= perHour;
   }
 }
 
@@ -124,11 +99,10 @@ class MemoryStore implements PlotStore {
 const g = globalThis as { __stagePlopMemoryStore?: MemoryStore };
 
 export function getPlotStore(): PlotStore | null {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (url && key) {
-    return new SupabaseStore(createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } }));
-  }
+  // The Vercel Marketplace integration sets KV_REST_API_*; Upstash's own docs use UPSTASH_REDIS_REST_*.
+  const url = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
+  if (url && token) return new RedisStore(new Redis({ url, token }));
   if (process.env.PLOT_STORE === "memory") return (g.__stagePlopMemoryStore ??= new MemoryStore());
   return null;
 }
