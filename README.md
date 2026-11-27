@@ -13,6 +13,8 @@ Stage plots that don't suck. Plop gear on a stage, move it around, and the input
 - **Plot view** (default) for arranging: straight overhead, drag to move, drag the magenta dot to rotate (15° steps), alignment guides, a 6 in snap grid, arrow keys to nudge.
 - **3D view** for looking: drag empty space to orbit, or jump between four preset angles.
 - The input list, monitor mixes and power drops come from what's on the stage, in engineer order (drums, bass, guitar, keys, vocals). **Copy Input List** copies them as tab-separated text.
+- **Generic pieces** in every category (Guitar Combo 1x12, Head on 4x10 Cab, Synth on a Table, Laptop on a Stand, Percussion Table, Instrument Mic…) for gear that isn't listed by name.
+- **Custom pieces** for anything else: name it, pick a shape, enter the size (in or cm) and inputs. Custom pieces save with the plot, can be edited and duplicated, and their inputs land in the input list.
 - Stage size, snap and Clear Stage live on the stage size tag.
 - Plots save in the browser.
 
@@ -62,7 +64,7 @@ Gear lives in `src/data/gear/`, one JSON file per category. Adding a piece is on
 - **`id`** is camelCase and unique across all files. Saved plots refer to it, so don't rename one that's shipped.
 - **`label`** is what the piece is called on stage. With `"numbered": true` it becomes "Guitar 1", "Guitar 2" and so on.
 - **`aliases`** are other names people search for, in lowercase.
-- **`shape.kind`** picks the 3D model: `kit`, `riser`, `combo`, `stack`, `board`, `keys`, `mic`, `wedge` or `box`. Each needs its own size fields; `src/lib/gear-schema.ts` lists them.
+- **`shape.kind`** picks the 3D model: `kit`, `riser`, `combo`, `stack`, `board`, `keys`, `table`, `mic`, `wedge` or `box`. Each needs its own size fields; `src/lib/gear-schema.ts` lists them.
 - **`inputs`** is a preset (`none`, `mic`, `di`, `stereo-di`, `di+mic`, `vocal`) or a list of `{ "name", "source", "stand" }`. `{L}` in a name becomes the piece's label.
 - Flags: `handed` (kits that can be flipped for a lefty), `riser`, `monitor`, `power`.
 

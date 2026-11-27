@@ -34,7 +34,11 @@ export type ShapeJson =
   | { kind: "keys"; w: number; d: number; stand: "x" | "legs" }
   | { kind: "mic" }
   | { kind: "wedge" }
-  | { kind: "box"; w: number; h: number; d: number; color: "cyan" | "yellow" };
+  | { kind: "box"; w: number; h: number; d: number; color: BoxColor }
+  | { kind: "table"; w: number; d: number; h: number; top: TableTop };
+
+export type BoxColor = "cyan" | "yellow" | "paper" | "ink";
+export type TableTop = "none" | "synth" | "laptop" | "percussion";
 
 export type GearJson = {
   id: string;
@@ -70,7 +74,8 @@ const SHAPE_FIELDS: Record<ShapeJson["kind"], { nums: string[]; lists?: string[]
     keys: { nums: ["w", "d"], enums: { stand: ["x", "legs"] } },
     mic: { nums: [] },
     wedge: { nums: [] },
-    box: { nums: ["w", "h", "d"], enums: { color: ["cyan", "yellow"] } },
+    box: { nums: ["w", "h", "d"], enums: { color: ["cyan", "yellow", "paper", "ink"] } },
+    table: { nums: ["w", "d", "h"], enums: { top: ["none", "synth", "laptop", "percussion"] } },
   };
 
 const ID_RE = /^[a-z][a-zA-Z0-9]*$/;
@@ -139,4 +144,37 @@ export function duplicateIds(files: GearFileJson[]): string[] {
       seen.add(g.id);
     }
   return dupes;
+}
+
+/* ---------- Custom pieces ---------- */
+
+/** A piece someone made because it isn't in the catalog. Saved inside the plot. */
+export type CustomGear = {
+  name: string;
+  cat: GearCategory;
+  shape: ShapeJson;
+  inputs: InputPreset | InputSpec[];
+};
+
+/** Shapes a custom piece can use, in the order the form offers them. */
+export const CUSTOM_SHAPES = ["combo", "stack", "keys", "table", "board", "box", "mic"] as const;
+export type CustomShapeKind = (typeof CUSTOM_SHAPES)[number];
+
+/** Same checks as catalog entries, plus a name length limit. */
+export function validateCustom(raw: unknown): string[] {
+  if (!raw || typeof raw !== "object") return ["custom piece: not an object"];
+  const c = raw as Record<string, unknown>;
+  const errors = validateGearFile(
+    {
+      category: c.cat,
+      gear: [{ id: "custom", name: c.name, note: "Custom", label: c.name, shape: c.shape, inputs: c.inputs }],
+    },
+    "custom piece",
+  );
+  if (typeof c.name === "string" && c.name.length > 60) errors.push("custom piece: name is longer than 60 characters");
+  const kind = (c.shape as { kind?: string } | undefined)?.kind;
+  if (kind && !(CUSTOM_SHAPES as readonly string[]).includes(kind))
+    errors.push(`custom piece: shape ${kind} isn't offered`);
+  if (Array.isArray(c.inputs) && c.inputs.length > 32) errors.push("custom piece: more than 32 inputs");
+  return errors;
 }

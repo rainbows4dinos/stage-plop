@@ -8,7 +8,9 @@
       "note": "SM58 on a tall boom",
       "label": "Vox",
       "numbered": true,
-      "shape": { "kind": "mic" },
+      "shape": {
+        "kind": "mic"
+      },
       "inputs": "vocal"
     },
     {
@@ -19,7 +21,9 @@
       "label": "Mix",
       "numbered": true,
       "monitor": true,
-      "shape": { "kind": "wedge" },
+      "shape": {
+        "kind": "wedge"
+      },
       "inputs": "none"
     },
     {
@@ -29,7 +33,13 @@
       "note": "Acoustic, laptop, anything",
       "label": "DI",
       "numbered": true,
-      "shape": { "kind": "box", "w": 5, "h": 3, "d": 7.5, "color": "cyan" },
+      "shape": {
+        "kind": "box",
+        "w": 5,
+        "h": 3,
+        "d": 7.5,
+        "color": "cyan"
+      },
       "inputs": "di"
     },
     {
@@ -40,8 +50,42 @@
       "label": "Power",
       "numbered": true,
       "power": true,
-      "shape": { "kind": "box", "w": 9, "h": 3.5, "d": 5, "color": "yellow" },
+      "shape": {
+        "kind": "box",
+        "w": 9,
+        "h": 3.5,
+        "d": 5,
+        "color": "yellow"
+      },
       "inputs": "none"
+    },
+    {
+      "id": "acousticDI",
+      "name": "Acoustic Guitar (DI)",
+      "aliases": ["generic", "acoustic", "acoustic guitar", "di"],
+      "note": "Generic, pickup into a DI",
+      "label": "Acoustic",
+      "numbered": true,
+      "shape": {
+        "kind": "box",
+        "w": 5,
+        "h": 3,
+        "d": 7.5,
+        "color": "cyan"
+      },
+      "inputs": "di"
+    },
+    {
+      "id": "instMic",
+      "name": "Instrument Mic",
+      "aliases": ["generic", "mic", "horn", "sax", "trumpet", "violin", "cello", "instrument"],
+      "note": "Generic, mic on a short boom",
+      "label": "Mic",
+      "numbered": true,
+      "shape": {
+        "kind": "mic"
+      },
+      "inputs": "mic"
     }
   ]
 }

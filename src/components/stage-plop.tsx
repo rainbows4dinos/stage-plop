@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { GEAR } from "@/lib/gear";
+import { GEAR, defOf, type CustomGear } from "@/lib/gear";
 import { EXAMPLE_PLOT, clampStage, computeInputs, inputListText, parsePlot, type Plot } from "@/lib/plot";
 import { ANGLES, StageEngine, type ViewMode } from "@/lib/stage/engine";
 import { setMuted } from "@/lib/stage/sound";
-import { GearDrawer } from "./gear-drawer";
+import { GearDrawer, type CustomFormState } from "./gear-drawer";
 import { InputList } from "./input-list";
 import { StageSettings } from "./stage-settings";
 
@@ -33,9 +33,11 @@ export function StagePlop() {
   const [sound, setSound] = useState(true);
   const [drawer, setDrawer] = useState(false);
   const [recent, setRecent] = useState<string[]>([]);
+  const [customForm, setCustomForm] = useState<CustomFormState>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const selected = plot.items.find((i) => i.id === selectedId) ?? null;
+  const selectedDef = selected ? defOf(selected) : undefined;
 
   // Start the engine once fonts are in (the AUDIENCE floor text is drawn with them).
   useEffect(() => {
@@ -161,7 +163,20 @@ export function StagePlop() {
 
   const closeDrawer = () => {
     setDrawer(false);
+    setCustomForm(null);
     addRef.current?.focus();
+  };
+
+  const saveCustom = (c: CustomGear, editId?: number) => {
+    if (editId !== undefined) {
+      engineRef.current?.setCustom(editId, c);
+      setDrawer(false);
+      setCustomForm(null);
+      say(`Saved ${c.name}`);
+    } else {
+      engineRef.current?.plop("custom", c);
+      setCustomForm(null);
+    }
   };
 
   const changeMode = (m: ViewMode) => {
@@ -305,13 +320,11 @@ export function StagePlop() {
           <button className="rot-handle" ref={rotRef} aria-label="Drag to Rotate" hidden>
             ↻
           </button>
-          {selected && (
+          {selected && selectedDef && (
             <div className={`inspector${drawer ? " beside-drawer" : ""}`}>
               <div className="flex items-baseline justify-between gap-2">
-                <span className="font-display text-base leading-5 font-bold tracking-tight">
-                  {GEAR[selected.type].name}
-                </span>
-                <span className="caption text-right">{GEAR[selected.type].note}</span>
+                <span className="font-display text-base leading-5 font-bold tracking-tight">{selectedDef.name}</span>
+                <span className="caption text-right">{selectedDef.note}</span>
               </div>
               <input
                 className="field w-full"
@@ -319,11 +332,23 @@ export function StagePlop() {
                 value={selected.label}
                 onChange={(e) => engineRef.current?.update(selected.id, { label: e.target.value })}
                 onBlur={(e) => {
-                  if (!e.target.value.trim())
-                    engineRef.current?.update(selected.id, { label: GEAR[selected.type].base });
+                  if (!e.target.value.trim()) engineRef.current?.update(selected.id, { label: selectedDef.base });
                 }}
               />
-              {GEAR[selected.type].handed && (
+              {selected.custom && (
+                <div>
+                  <button
+                    className="btn btn-sm"
+                    onClick={() => {
+                      setCustomForm({ editId: selected.id, initial: selected.custom });
+                      setDrawer(true);
+                    }}
+                  >
+                    Edit Custom Piece
+                  </button>
+                </div>
+              )}
+              {selectedDef.handed && (
                 <label className="check w-fit">
                   <input
                     type="checkbox"
@@ -357,7 +382,15 @@ export function StagePlop() {
               </div>
             </div>
           )}
-          <GearDrawer open={drawer} recent={recent} onPlop={plop} onClose={closeDrawer} />
+          <GearDrawer
+            open={drawer}
+            recent={recent}
+            customForm={customForm}
+            onPlop={plop}
+            onCustom={saveCustom}
+            onCustomForm={setCustomForm}
+            onClose={closeDrawer}
+          />
         </div>
       </main>
 

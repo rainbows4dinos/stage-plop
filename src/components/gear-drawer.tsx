@@ -1,12 +1,16 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { GEAR, LIBRARY_ORDER, type GearDef } from "@/lib/gear";
+import { GEAR, LIBRARY_ORDER, type CustomGear, type GearDef } from "@/lib/gear";
 import { searchGear } from "@/lib/search";
+import { CustomGearForm } from "./custom-gear-form";
 
 const CATALOG = Object.values(GEAR);
 
 type Section = { title: string; gear: GearDef[] };
+
+/** When set, the drawer shows the custom piece form instead of the list. */
+export type CustomFormState = { editId?: number; initial?: CustomGear; name?: string } | null;
 
 /**
  * Add Gear: search first, browse second. Slides over the stage on desktop and
@@ -16,12 +20,18 @@ type Section = { title: string; gear: GearDef[] };
 export function GearDrawer({
   open,
   recent,
+  customForm,
   onPlop,
+  onCustom,
+  onCustomForm,
   onClose,
 }: {
   open: boolean;
   recent: string[];
+  customForm: CustomFormState;
   onPlop: (id: string) => void;
+  onCustom: (c: CustomGear, editId?: number) => void;
+  onCustomForm: (state: CustomFormState) => void;
   onClose: () => void;
 }) {
   const [query, setQuery] = useState("");
@@ -43,8 +53,8 @@ export function GearDrawer({
   const optionId = (i: number) => `${uid}-opt-${i}`;
 
   useEffect(() => {
-    if (open) inputRef.current?.focus();
-  }, [open]);
+    if (open && !customForm) inputRef.current?.focus();
+  }, [open, customForm]);
 
   // Keep the highlighted option in view while arrowing through.
   useEffect(() => {
@@ -62,81 +72,123 @@ export function GearDrawer({
     e.preventDefault();
   };
 
+  const title = customForm ? (customForm.editId ? "Edit Custom Piece" : "Make a Custom Piece") : "Add Gear";
+  const makeCustom = () => onCustomForm({ name: query.trim() });
+
   let i = -1;
   return (
-    <div className="drawer" data-open={open} role="dialog" aria-label="Add Gear" aria-hidden={!open}>
+    <div
+      className="drawer"
+      data-open={open}
+      role="dialog"
+      aria-label={title}
+      aria-hidden={!open}
+      onKeyDown={(e) => {
+        if (customForm && e.key === "Escape") {
+          e.preventDefault();
+          onCustomForm(null);
+        }
+      }}
+    >
       <div className="panel-head">
-        <h2 className="h2">Add Gear</h2>
+        <h2 className="h2">{title}</h2>
         <button className="btn btn-sm" onClick={onClose} tabIndex={open ? 0 : -1}>
-          Done
+          {customForm ? "Close" : "Done"}
         </button>
       </div>
-      <div className="grid gap-1.5 border-b border-ink px-4 py-3">
-        <input
-          ref={inputRef}
-          className="field w-full"
-          type="search"
-          role="combobox"
-          aria-label="Search Gear"
-          aria-expanded="true"
-          aria-controls={`${uid}-list`}
-          aria-activedescendant={options.length ? optionId(current) : undefined}
-          placeholder="Search gear, brands, nicknames"
-          autoComplete="off"
-          spellCheck={false}
-          value={query}
-          tabIndex={open ? 0 : -1}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setActive(0);
-          }}
-          onKeyDown={onKeyDown}
+      {customForm ? (
+        <CustomGearForm
+          key={customForm.editId ?? "new"}
+          initial={customForm.initial}
+          initialName={customForm.name}
+          onSubmit={(c) => onCustom(c, customForm.editId)}
+          onCancel={() => onCustomForm(null)}
         />
-        <span className="caption max-[1000px]:hidden">↑↓ Choose · Enter Plops · Esc Closes</span>
-      </div>
-      <div className="scroll" id={`${uid}-list`} role="listbox" aria-label="Gear" ref={listRef}>
-        {options.length === 0 && (
-          <p className="m-0 p-4 text-muted">
-            Nothing matches “{query.trim()}”. Try a brand, a nickname like “fridge”, or a category like “keys”.
-          </p>
-        )}
-        {sections.map((s) =>
-          s.gear.length ? (
-            <section key={s.title} role="group" aria-label={s.title}>
-              <div className="caption px-4 pt-3 pb-1">{s.title}</div>
-              <div className="px-2 pb-2">
-                {s.gear.map((g) => {
-                  i++;
-                  const idx = i;
-                  return (
-                    <div
-                      key={`${s.title}-${g.id}`}
-                      id={optionId(idx)}
-                      role="option"
-                      aria-selected={idx === current}
-                      className="gear-option"
-                      onMouseMove={() => idx !== current && setActive(idx)}
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => onPlop(g.id)}
-                    >
-                      <span>
-                        <span className="block font-medium">{g.name}</span>
-                        <span className="block text-xs leading-4 text-muted">
-                          {g.note}
-                          {s.title === "Results" || s.title === "Recent" ? ` · ${g.cat}` : ""}
-                        </span>
-                      </span>
-                      <span className="plop" aria-hidden="true">
-                        +
-                      </span>
-                    </div>
-                  );
-                })}
+      ) : (
+        <>
+          <div className="grid gap-1.5 border-b border-ink px-4 py-3">
+            <input
+              ref={inputRef}
+              className="field w-full"
+              type="search"
+              role="combobox"
+              aria-label="Search Gear"
+              aria-expanded="true"
+              aria-controls={`${uid}-list`}
+              aria-activedescendant={options.length ? optionId(current) : undefined}
+              placeholder="Search gear, brands, nicknames"
+              autoComplete="off"
+              spellCheck={false}
+              value={query}
+              tabIndex={open ? 0 : -1}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setActive(0);
+              }}
+              onKeyDown={onKeyDown}
+            />
+            <span className="caption max-[1000px]:hidden">↑↓ Choose · Enter Plops · Esc Closes</span>
+          </div>
+          <div className="scroll" id={`${uid}-list`} role="listbox" aria-label="Gear" ref={listRef}>
+            {options.length === 0 && (
+              <div className="grid gap-3 p-4">
+                <p className="m-0 text-muted">
+                  Nothing matches “{query.trim()}”. Try a brand, a nickname like “fridge”, or a category like “keys”. Or
+                  make it yourself:
+                </p>
+                <div>
+                  <button className="btn btn-primary" onClick={makeCustom}>
+                    Make “{query.trim()}”
+                  </button>
+                </div>
               </div>
-            </section>
-          ) : null,
-        )}
-      </div>
+            )}
+            {sections.map((s) =>
+              s.gear.length ? (
+                <section key={s.title} role="group" aria-label={s.title}>
+                  <div className="caption px-4 pt-3 pb-1">{s.title}</div>
+                  <div className="px-2 pb-2">
+                    {s.gear.map((g) => {
+                      i++;
+                      const idx = i;
+                      return (
+                        <div
+                          key={`${s.title}-${g.id}`}
+                          id={optionId(idx)}
+                          role="option"
+                          aria-selected={idx === current}
+                          className="gear-option"
+                          onMouseMove={() => idx !== current && setActive(idx)}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={() => onPlop(g.id)}
+                        >
+                          <span>
+                            <span className="block font-medium">{g.name}</span>
+                            <span className="block text-xs leading-4 text-muted">
+                              {g.note}
+                              {s.title === "Results" || s.title === "Recent" ? ` · ${g.cat}` : ""}
+                            </span>
+                          </span>
+                          <span className="plop" aria-hidden="true">
+                            +
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              ) : null,
+            )}
+            {options.length > 0 && (
+              <div className="border-t border-line px-4 py-3">
+                <button className="btn btn-sm" onClick={makeCustom} tabIndex={open ? 0 : -1}>
+                  Can&apos;t Find It? Make a Custom Piece
+                </button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

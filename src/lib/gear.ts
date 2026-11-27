@@ -11,7 +11,9 @@ import {
   CATEGORIES,
   INPUT_PRESETS,
   duplicateIds,
+  validateCustom,
   validateGearFile,
+  type CustomGear,
   type GearCategory,
   type GearFileJson,
   type GearJson,
@@ -19,7 +21,7 @@ import {
   type ShapeJson,
 } from "./gear-schema.ts";
 
-export type { GearCategory, InputSpec } from "./gear-schema.ts";
+export type { CustomGear, GearCategory, InputSpec } from "./gear-schema.ts";
 
 export const IN = (inches: number) => inches / 12;
 
@@ -31,7 +33,8 @@ export type BuildSpec =
   | { kind: "stack"; cw: number; ch: number; cd: number; hw: number; hh: number; hd: number }
   | { kind: "board"; w: number; d: number }
   | { kind: "keys"; w: number; d: number; stand: "x" | "legs" }
-  | { kind: "box"; w: number; h: number; d: number; color: "cyan" | "yellow" };
+  | { kind: "box"; w: number; h: number; d: number; color: "cyan" | "yellow" | "paper" | "ink" }
+  | { kind: "table"; w: number; d: number; h: number; top: "none" | "synth" | "laptop" | "percussion" };
 
 export type GearDef = {
   id: string;
@@ -49,6 +52,8 @@ export type GearDef = {
   power?: boolean;
   build: BuildSpec;
   inputs: InputSpec[];
+  /** Made by someone on this plot, not from the catalog. */
+  custom?: boolean;
 };
 
 /** JSON shapes are in inches; the builders want feet (kits excepted). */
@@ -99,6 +104,38 @@ function loadCatalog(): Record<string, GearDef> {
 }
 
 export const GEAR: Record<string, GearDef> = loadCatalog();
+
+/** A short size line for a custom piece, like the catalog's notes. */
+export function describeShape(shape: CustomGear["shape"]): string {
+  const r = (n: number) => Math.round(n * 10) / 10;
+  if ("w" in shape && "d" in shape) return `${r(shape.w)} × ${r(shape.d)} in · Custom`;
+  if ("cw" in shape) return `${r(shape.cw)} × ${r(shape.cd)} in · Custom`;
+  return "Custom";
+}
+
+const customCache = new WeakMap<CustomGear, GearDef>();
+/** The gear definition for a custom piece. */
+export function customDef(c: CustomGear): GearDef {
+  let d = customCache.get(c);
+  if (!d) {
+    d = {
+      ...toDef(
+        { id: "custom", name: c.name, note: describeShape(c.shape), label: c.name, shape: c.shape, inputs: c.inputs },
+        c.cat,
+      ),
+      custom: true,
+    };
+    customCache.set(c, d);
+  }
+  return d;
+}
+
+/** Plot items have type "custom" plus their own definition, or a catalog id. */
+export function defOf(item: { type: string; custom?: CustomGear }): GearDef | undefined {
+  if (item.type === "custom")
+    return item.custom && validateCustom(item.custom).length === 0 ? customDef(item.custom) : undefined;
+  return GEAR[item.type];
+}
 
 export const LIBRARY_ORDER: GearCategory[] = CATEGORIES;
 

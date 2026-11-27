@@ -8,17 +8,58 @@
       "note": "22\" kick, 12\" rack, 16\" floor",
       "label": "Drums",
       "handed": true,
-      "shape": { "kind": "kit", "kick": 22, "toms": [12], "floor": [16] },
+      "shape": {
+        "kind": "kit",
+        "kick": 22,
+        "toms": [12],
+        "floor": [16]
+      },
       "inputs": [
-        { "name": "Kick In", "source": "Beta 91A", "stand": "None" },
-        { "name": "Kick Out", "source": "Beta 52A", "stand": "Short Boom" },
-        { "name": "Snare Top", "source": "SM57", "stand": "Short Boom" },
-        { "name": "Snare Bottom", "source": "SM57", "stand": "Short Boom" },
-        { "name": "Hi-Hat", "source": "SM81", "stand": "Short Boom" },
-        { "name": "Rack Tom", "source": "e604", "stand": "Clip" },
-        { "name": "Floor Tom", "source": "e604", "stand": "Clip" },
-        { "name": "OH L", "source": "KM184", "stand": "Tall Boom" },
-        { "name": "OH R", "source": "KM184", "stand": "Tall Boom" }
+        {
+          "name": "Kick In",
+          "source": "Beta 91A",
+          "stand": "None"
+        },
+        {
+          "name": "Kick Out",
+          "source": "Beta 52A",
+          "stand": "Short Boom"
+        },
+        {
+          "name": "Snare Top",
+          "source": "SM57",
+          "stand": "Short Boom"
+        },
+        {
+          "name": "Snare Bottom",
+          "source": "SM57",
+          "stand": "Short Boom"
+        },
+        {
+          "name": "Hi-Hat",
+          "source": "SM81",
+          "stand": "Short Boom"
+        },
+        {
+          "name": "Rack Tom",
+          "source": "e604",
+          "stand": "Clip"
+        },
+        {
+          "name": "Floor Tom",
+          "source": "e604",
+          "stand": "Clip"
+        },
+        {
+          "name": "OH L",
+          "source": "KM184",
+          "stand": "Tall Boom"
+        },
+        {
+          "name": "OH R",
+          "source": "KM184",
+          "stand": "Tall Boom"
+        }
       ]
     },
     {
@@ -28,18 +69,63 @@
       "note": "22\" kick, 10/12\" racks, 16\" floor",
       "label": "Drums",
       "handed": true,
-      "shape": { "kind": "kit", "kick": 22, "toms": [10, 12], "floor": [16] },
+      "shape": {
+        "kind": "kit",
+        "kick": 22,
+        "toms": [10, 12],
+        "floor": [16]
+      },
       "inputs": [
-        { "name": "Kick In", "source": "Beta 91A", "stand": "None" },
-        { "name": "Kick Out", "source": "Beta 52A", "stand": "Short Boom" },
-        { "name": "Snare Top", "source": "SM57", "stand": "Short Boom" },
-        { "name": "Snare Bottom", "source": "SM57", "stand": "Short Boom" },
-        { "name": "Hi-Hat", "source": "SM81", "stand": "Short Boom" },
-        { "name": "Rack Tom 1", "source": "e604", "stand": "Clip" },
-        { "name": "Rack Tom 2", "source": "e604", "stand": "Clip" },
-        { "name": "Floor Tom", "source": "e604", "stand": "Clip" },
-        { "name": "OH L", "source": "KM184", "stand": "Tall Boom" },
-        { "name": "OH R", "source": "KM184", "stand": "Tall Boom" }
+        {
+          "name": "Kick In",
+          "source": "Beta 91A",
+          "stand": "None"
+        },
+        {
+          "name": "Kick Out",
+          "source": "Beta 52A",
+          "stand": "Short Boom"
+        },
+        {
+          "name": "Snare Top",
+          "source": "SM57",
+          "stand": "Short Boom"
+        },
+        {
+          "name": "Snare Bottom",
+          "source": "SM57",
+          "stand": "Short Boom"
+        },
+        {
+          "name": "Hi-Hat",
+          "source": "SM81",
+          "stand": "Short Boom"
+        },
+        {
+          "name": "Rack Tom 1",
+          "source": "e604",
+          "stand": "Clip"
+        },
+        {
+          "name": "Rack Tom 2",
+          "source": "e604",
+          "stand": "Clip"
+        },
+        {
+          "name": "Floor Tom",
+          "source": "e604",
+          "stand": "Clip"
+        },
+        {
+          "name": "OH L",
+          "source": "KM184",
+          "stand": "Tall Boom"
+        },
+        {
+          "name": "OH R",
+          "source": "KM184",
+          "stand": "Tall Boom"
+        }
       ]
     },
     {
@@ -49,12 +135,33 @@
       "note": "18\" kick, 12\" rack, 14\" floor",
       "label": "Drums",
       "handed": true,
-      "shape": { "kind": "kit", "kick": 18, "toms": [12], "floor": [14] },
+      "shape": {
+        "kind": "kit",
+        "kick": 18,
+        "toms": [12],
+        "floor": [14]
+      },
       "inputs": [
-        { "name": "Kick", "source": "Beta 52A", "stand": "Short Boom" },
-        { "name": "Snare", "source": "SM57", "stand": "Short Boom" },
-        { "name": "OH L", "source": "KM184", "stand": "Tall Boom" },
-        { "name": "OH R", "source": "KM184", "stand": "Tall Boom" }
+        {
+          "name": "Kick",
+          "source": "Beta 52A",
+          "stand": "Short Boom"
+        },
+        {
+          "name": "Snare",
+          "source": "SM57",
+          "stand": "Short Boom"
+        },
+        {
+          "name": "OH L",
+          "source": "KM184",
+          "stand": "Tall Boom"
+        },
+        {
+          "name": "OH R",
+          "source": "KM184",
+          "stand": "Tall Boom"
+        }
       ]
     },
     {
@@ -64,8 +171,40 @@
       "note": "8 × 6 ft, 1 ft tall",
       "label": "Riser",
       "riser": true,
-      "shape": { "kind": "riser", "w": 96, "d": 72, "h": 12 },
+      "shape": {
+        "kind": "riser",
+        "w": 96,
+        "d": 72,
+        "h": 12
+      },
       "inputs": "none"
+    },
+    {
+      "id": "percTable",
+      "name": "Percussion Table",
+      "aliases": ["generic", "percussion", "bongos", "congas", "shakers", "hand percussion", "table"],
+      "note": "Generic, 36 × 18 in",
+      "label": "Perc",
+      "numbered": true,
+      "shape": {
+        "kind": "table",
+        "w": 36,
+        "d": 18,
+        "h": 30,
+        "top": "percussion"
+      },
+      "inputs": [
+        {
+          "name": "{L} L",
+          "source": "KM184",
+          "stand": "Tall Boom"
+        },
+        {
+          "name": "{L} R",
+          "source": "KM184",
+          "stand": "Tall Boom"
+        }
+      ]
     }
   ]
 }

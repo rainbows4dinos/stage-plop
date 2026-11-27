@@ -8,7 +8,15 @@
       "aliases": ["svt", "ampeg", "8x10", "fridge", "bass rig", "bass amp"],
       "note": "24 × 15.5 in cab, 4.4 ft tall",
       "label": "Bass",
-      "shape": { "kind": "stack", "cw": 24, "ch": 52, "cd": 15.5, "hw": 24, "hh": 11, "hd": 12 },
+      "shape": {
+        "kind": "stack",
+        "cw": 24,
+        "ch": 52,
+        "cd": 15.5,
+        "hw": 24,
+        "hh": 11,
+        "hd": 12
+      },
       "inputs": "di+mic"
     },
     {
@@ -17,8 +25,78 @@
       "aliases": ["bass combo", "1x15", "bass amp"],
       "note": "22 × 17 in",
       "label": "Bass",
-      "shape": { "kind": "combo", "w": 22, "h": 24, "d": 17, "grill": "light" },
+      "shape": {
+        "kind": "combo",
+        "w": 22,
+        "h": 24,
+        "d": 17,
+        "grill": "light"
+      },
       "inputs": "di+mic"
+    },
+    {
+      "id": "bassHead410",
+      "name": "Head on 4x10 Cab",
+      "aliases": ["generic", "4x10", "bass cab", "bass rig", "bass amp"],
+      "note": "Generic, 24 × 16 in cab",
+      "label": "Bass",
+      "shape": {
+        "kind": "stack",
+        "cw": 24,
+        "ch": 24,
+        "cd": 16,
+        "hw": 20,
+        "hh": 8,
+        "hd": 11
+      },
+      "inputs": "di+mic"
+    },
+    {
+      "id": "bassHead115",
+      "name": "Head on 1x15 Cab",
+      "aliases": ["generic", "1x15", "bass cab", "bass amp"],
+      "note": "Generic, 22 × 18 in cab",
+      "label": "Bass",
+      "shape": {
+        "kind": "stack",
+        "cw": 22,
+        "ch": 24,
+        "cd": 18,
+        "hw": 20,
+        "hh": 8,
+        "hd": 11
+      },
+      "inputs": "di+mic"
+    },
+    {
+      "id": "bassCombo210",
+      "name": "Bass Combo, 2x10",
+      "aliases": ["generic", "bass combo", "2x10", "bass amp", "small bass amp"],
+      "note": "Generic, 20 × 14 in",
+      "label": "Bass",
+      "shape": {
+        "kind": "combo",
+        "w": 20,
+        "h": 22,
+        "d": 14,
+        "grill": "light"
+      },
+      "inputs": "di+mic"
+    },
+    {
+      "id": "bassDI",
+      "name": "Bass, DI Only",
+      "aliases": ["generic", "bass di", "no amp", "direct"],
+      "note": "No amp, just a DI",
+      "label": "Bass",
+      "shape": {
+        "kind": "box",
+        "w": 5,
+        "h": 3,
+        "d": 7.5,
+        "color": "cyan"
+      },
+      "inputs": "di"
     }
   ]
 }
