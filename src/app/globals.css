@@ -725,3 +725,9 @@
     }
   }
 }
+
+/* Buy Me a Coffee button: out of the way while Add Gear is open. */
+body[data-drawer-open] #bmc-wbtn,
+body[data-drawer-open] #bmc-iframe {
+  display: none !important;
+}
