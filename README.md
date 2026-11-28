@@ -2,7 +2,7 @@
 
 Stage plots that don't suck. Plop gear on a stage, move it around, and the input list builds itself. Part of the [Seeens](https://www.seeens.com) family.
 
-**Try it:** [stage-plop.vercel.app](https://stage-plop.vercel.app/)
+**Try it:** [stageplop.com](https://www.stageplop.com/)
 
 ![Stage Plop in 3D view: a four-piece band's gear on a 16 × 12 ft stage, with the gear library on the left and the auto-built input list on the right](docs/screenshot.png)
 

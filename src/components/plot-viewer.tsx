@@ -141,7 +141,9 @@ export function PlotViewer({ plot, updatedAt }: { plot: Plot; updatedAt: string 
       <aside className="panel panel-inputs" aria-label="Input List">
         <div className="panel-head">
           <h2 className="h2">Input List</h2>
-          <span className="tag tag-ink">By Seeens</span>
+          <a className="tag tag-ink tag-link" href="https://www.seeens.com" target="_blank" rel="noopener">
+            By Seeens
+          </a>
         </div>
         <InputList items={plot.items} selectedId={selectedId} />
       </aside>

@@ -433,7 +433,9 @@ export function StagePlop() {
           <h1 className="wordmark">
             STAGE <span className="swipe">PLOP</span>
           </h1>
-          <span className="tag tag-ink">By Seeens</span>
+          <a className="tag tag-ink tag-link" href="https://www.seeens.com" target="_blank" rel="noopener">
+            By Seeens
+          </a>
         </div>
         <div className="head-controls">
           {local && (
