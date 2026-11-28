@@ -138,6 +138,15 @@
     background: var(--ink-900);
     color: var(--paper-50);
   }
+  a.tag-link {
+    text-decoration: none;
+  }
+  @media (hover: hover) {
+    a.tag-link:hover {
+      background: var(--plate-magenta);
+      color: var(--ink-900);
+    }
+  }
   .tag-cyan {
     background: var(--plate-cyan);
   }
