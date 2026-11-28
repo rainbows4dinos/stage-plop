@@ -230,6 +230,13 @@ export function StagePlop() {
     return () => window.removeEventListener("pagehide", flush);
   }, [current]);
 
+  // The tip button floats bottom right; tuck it away while Add Gear is open so it
+  // never covers gear in the bottom sheet on phones.
+  useEffect(() => {
+    document.body.toggleAttribute("data-drawer-open", drawer);
+    return () => document.body.removeAttribute("data-drawer-open");
+  }, [drawer]);
+
   // While the drawer covers the stage on desktop, center the view in what's left.
   useEffect(() => {
     const engine = engineRef.current;
