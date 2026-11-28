@@ -36,6 +36,7 @@ import { InputList } from "./input-list";
 import { PlotsMenu } from "./plots-menu";
 import { ShareMenu, type SaveStatus } from "./share-menu";
 import { StageSettings } from "./stage-settings";
+import { ViewMenu } from "./view-menu";
 
 // Plots live in this browser; shared ones also live online (see src/lib/share.ts).
 const AUTOSAVE_MS = 1200;
@@ -469,7 +470,7 @@ export function StagePlop() {
             onNewEditLink={newEditLink}
             onRetry={() => current && saveOnline(current)}
           />
-          <button className="btn btn-primary" onClick={copyInputs}>
+          <button className="btn btn-primary hide-mobile" onClick={copyInputs}>
             Copy Input List
           </button>
         </div>
@@ -501,7 +502,7 @@ export function StagePlop() {
                 aria-keyshortcuts="/"
                 onClick={() => (drawer ? closeDrawer() : setDrawer(true))}
               >
-                <span aria-hidden="true">+</span> Add Gear
+                <span aria-hidden="true">+</span> Add<span className="hide-compact"> Gear</span>
               </button>
               <div className="seg seg-sm" role="group" aria-label="View">
                 <button aria-pressed={mode === "plot"} onClick={() => changeMode("plot")}>
@@ -512,7 +513,7 @@ export function StagePlop() {
                 </button>
               </div>
               {mode === "3d" && (
-                <div className="seg seg-sm" role="group" aria-label="Camera Angle">
+                <div className="seg seg-sm hide-compact" role="group" aria-label="Camera Angle">
                   <button aria-label="Turn Left" onClick={() => engineRef.current?.turn(-1)}>
                     ←
                   </button>
@@ -536,38 +537,55 @@ export function StagePlop() {
                 }}
               />
             </div>
-            <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-              <div className="seg seg-sm" role="group" aria-label="Zoom">
-                <button aria-label="Zoom Out" onClick={() => engineRef.current?.zoomBy(1.25)}>
-                  −
-                </button>
-                <button onClick={() => engineRef.current?.fit()}>Fit</button>
-                <button aria-label="Zoom In" onClick={() => engineRef.current?.zoomBy(0.8)}>
-                  +
-                </button>
+            <div className="ml-auto flex items-center justify-end gap-2">
+              <div className="show-compact">
+                <ViewMenu
+                  labels={labels}
+                  sound={sound}
+                  onLabels={(v) => {
+                    engineRef.current?.setShowLabels(v);
+                    setLabels(v);
+                  }}
+                  onSound={(v) => {
+                    setMuted(!v);
+                    setSound(v);
+                  }}
+                  onFit={() => engineRef.current?.fit()}
+                />
               </div>
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={labels}
-                  onChange={(e) => {
-                    engineRef.current?.setShowLabels(e.target.checked);
-                    setLabels(e.target.checked);
-                  }}
-                />
-                Labels
-              </label>
-              <label className="check">
-                <input
-                  type="checkbox"
-                  checked={sound}
-                  onChange={(e) => {
-                    setMuted(!e.target.checked);
-                    setSound(e.target.checked);
-                  }}
-                />
-                Sound
-              </label>
+              <div className="hide-compact flex flex-wrap items-center justify-end gap-2">
+                <div className="seg seg-sm" role="group" aria-label="Zoom">
+                  <button aria-label="Zoom Out" onClick={() => engineRef.current?.zoomBy(1.25)}>
+                    −
+                  </button>
+                  <button onClick={() => engineRef.current?.fit()}>Fit</button>
+                  <button aria-label="Zoom In" onClick={() => engineRef.current?.zoomBy(0.8)}>
+                    +
+                  </button>
+                </div>
+                <label className="check">
+                  <input
+                    type="checkbox"
+                    checked={labels}
+                    onChange={(e) => {
+                      engineRef.current?.setShowLabels(e.target.checked);
+                      setLabels(e.target.checked);
+                    }}
+                  />
+                  Labels
+                </label>
+                <label className="check">
+                  <input
+                    type="checkbox"
+                    checked={sound}
+                    onChange={(e) => {
+                      setMuted(!e.target.checked);
+                      setSound(e.target.checked);
+                    }}
+                  />
+                  Sound
+                </label>
+              </div>
             </div>
           </div>
           <div className="hint">
@@ -664,7 +682,10 @@ export function StagePlop() {
       <aside className="panel panel-inputs" aria-label="Input List">
         <div className="panel-head">
           <h2 className="h2">Input List</h2>
-          <span className="caption">Builds Itself</span>
+          <span className="caption hide-mobile">Builds Itself</span>
+          <button className="btn btn-sm btn-primary show-mobile" onClick={copyInputs}>
+            Copy
+          </button>
         </div>
         <InputList items={plot.items} selectedId={selectedId} />
       </aside>

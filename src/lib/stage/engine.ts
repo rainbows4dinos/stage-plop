@@ -38,6 +38,9 @@ type Piece = PlotItem & {
   tiltZ: number;
   drop: { t0: number } | null;
   labelEl: HTMLDivElement;
+  /** Label size in px, measured when its text changes. */
+  labelW: number;
+  labelH: number;
 };
 
 const STAGE_H = 2.5;
@@ -597,6 +600,8 @@ export class StageEngine {
       tiltZ: 0,
       drop: null,
       labelEl,
+      labelW: 0,
+      labelH: 0,
     };
     if (data.id && data.id >= this.nextId) this.nextId = data.id + 1;
     hit.userData.piece = p;
@@ -917,6 +922,25 @@ export class StageEngine {
     on(h, "pointercancel", rotEnd);
   }
 
+  /**
+   * Hide labels that would land on top of another one. The selected piece
+   * always keeps its label; then bigger gear wins, and the riser goes last.
+   * Tapping a piece brings its label back.
+   */
+  private cullLabels(placed: { p: Piece; x: number; y: number }[]) {
+    const prio = (p: Piece) => (p === this.selected ? -1e9 : p.def.riser ? 1e9 : -(p.fp.w * p.fp.d));
+    placed.sort((a, b) => prio(a.p) - prio(b.p));
+    const kept: { l: number; t: number; r: number; b: number }[] = [];
+    const pad = 2;
+    for (const { p, x, y } of placed) {
+      const box = { l: x - p.labelW / 2 - pad, t: y - p.labelH - pad, r: x + p.labelW / 2 + pad, b: y + pad };
+      const hit = kept.some((k) => box.l < k.r && box.r > k.l && box.t < k.b && box.b > k.t);
+      const cull = hit && p !== this.selected;
+      p.labelEl.classList.toggle("culled", cull);
+      if (!cull) kept.push(box);
+    }
+  }
+
   /* ---------- Frame ---------- */
 
   private frame(now: number) {
@@ -929,6 +953,7 @@ export class StageEngine {
       return [(v.x * 0.5 + 0.5) * W, (-v.y * 0.5 + 0.5) * H] as const;
     };
 
+    const placed: { p: Piece; x: number; y: number }[] = [];
     for (const p of this.pieces) {
       if (p.drop && now < p.drop.t0) {
         // queued in a setup drop: not here yet
@@ -976,10 +1001,16 @@ export class StageEngine {
       }
       const [sx, sy] = toScreen(this.tmp);
       el.style.transform = `translate(${sx}px, ${sy}px) translate(-50%, -100%)`;
-      if (el.textContent !== p.label) el.textContent = p.label;
+      if (el.textContent !== p.label || !p.labelW) {
+        el.textContent = p.label;
+        p.labelW = el.offsetWidth;
+        p.labelH = el.offsetHeight;
+      }
       el.classList.toggle("sel", isSel);
       el.style.zIndex = isSel ? "3" : p.def.riser ? "1" : "2";
+      placed.push({ p, x: sx, y: sy });
     }
+    this.cullLabels(placed);
 
     const s = this.selected;
     if (s && !s.def.riser && !s.drop && !this.readOnly) {

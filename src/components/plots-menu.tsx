@@ -52,7 +52,7 @@ export function PlotsMenu({
         aria-haspopup="dialog"
         onClick={() => setOpen(!open)}
       >
-        Your Plots
+        <span className="hide-mobile">Your </span>Plots
         <svg width="10" height="7" viewBox="0 0 12 8" aria-hidden="true">
           <path d="M1 1.5l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.8" />
         </svg>
