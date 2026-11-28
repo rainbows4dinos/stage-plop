@@ -250,7 +250,10 @@ export function StagePlop() {
       const engine = engineRef.current;
       if (!engine) return;
       if ((e.target as HTMLElement).closest("input, select, textarea, [role=dialog]")) return;
-      if (e.key === "/" && !e.metaKey && !e.ctrlKey) {
+      // Leave Cmd/Ctrl/Option combos to the browser and OS (Cmd+R reloads, Cmd+← goes back…).
+      // Shift is fine: Shift+R and Shift+arrows are ours.
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === "/") {
         e.preventDefault();
         setDrawer(true);
         return;
