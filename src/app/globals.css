@@ -432,6 +432,11 @@
       visibility 0s 180ms;
   }
 
+  .popover.popover-right {
+    left: auto;
+    right: 0;
+  }
+
   .tag-button {
     display: inline-flex;
     align-items: center;
@@ -685,6 +690,16 @@
     .drawer[data-open="false"] {
       transform: translateY(102%);
     }
+    .popover.popover-right {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      width: auto;
+      max-height: calc(100svh - 24px);
+      overflow-y: auto;
+      z-index: 40;
+    }
     .inspector.beside-drawer,
     .stage-top.beside-drawer {
       left: 12px;
@@ -698,11 +713,15 @@
     .head-controls {
       width: 100%;
     }
-    .head-controls .field {
+    .head-controls > .field {
       flex: 1 1 100%;
     }
-    .head-controls .btn {
+    .head-controls > .btn,
+    .head-controls > .relative {
       flex: 1;
+    }
+    .head-controls > .relative > .btn {
+      width: 100%;
     }
   }
 }

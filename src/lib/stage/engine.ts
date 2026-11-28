@@ -160,6 +160,8 @@ export class StageEngine {
     private rotHandle: HTMLElement,
     private cb: EngineCallbacks,
     displayFont: string,
+    /** View links: look, select and spin, but nothing moves. */
+    private readOnly = false,
   ) {
     this.reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -799,6 +801,10 @@ export class StageEngine {
       if (this.pointers.size > 2) return;
       this.downAt = { x: e.clientX, y: e.clientY };
       const p = this.hitPiece(e);
+      if (p && this.readOnly) {
+        this.select(p.id);
+        return;
+      }
       if (p) {
         this.select(p.id);
         this.beginDrag(p, e);
@@ -809,7 +815,7 @@ export class StageEngine {
         canvas.style.cursor = "grabbing";
         return;
       }
-      if (e.pointerType !== "mouse" && this.selected) {
+      if (e.pointerType !== "mouse" && this.selected && !this.readOnly) {
         // Touch in Plot: drag on empty stage moves the selected piece, so a finger never hides it.
         this.beginDrag(this.selected, e, true);
         return;
@@ -847,7 +853,7 @@ export class StageEngine {
         }
         return;
       }
-      if (e.pointerType === "mouse") canvas.style.cursor = this.hitPiece(e) ? "grab" : "";
+      if (e.pointerType === "mouse") canvas.style.cursor = this.hitPiece(e) ? (this.readOnly ? "pointer" : "grab") : "";
     });
 
     const end = (e: PointerEvent) => {
@@ -956,7 +962,7 @@ export class StageEngine {
       p.outline.visible = isSel || plotish;
       p.outline.material = isSel ? this.selLine : this.plotLine;
       p.fill.visible = isSel;
-      p.rotLine.visible = isSel && !p.def.riser;
+      p.rotLine.visible = isSel && !p.def.riser && !this.readOnly;
 
       const el = p.labelEl;
       const show = this.showLabels || isSel;
@@ -976,7 +982,7 @@ export class StageEngine {
     }
 
     const s = this.selected;
-    if (s && !s.def.riser && !s.drop) {
+    if (s && !s.def.riser && !s.drop && !this.readOnly) {
       this.tmp.set(s.x + Math.sin(s.rot) * s.rotLen, s.holder.position.y + 0.03, s.z + Math.cos(s.rot) * s.rotLen);
       const [hx, hy] = toScreen(this.tmp);
       this.rotHandle.hidden = false;

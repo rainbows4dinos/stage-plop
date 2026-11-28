@@ -18,12 +18,12 @@ Stage plots that don't suck. Plop gear on a stage, move it around, and the input
 - **Your Rig:** everything you've plopped, custom pieces included, sits at the top of Add Gear, newest first. Your custom pieces also show up in search.
 - **Setups:** save the whole stage as a named setup (Full Backline, Acoustic Duo) and add it to any plot or replace the plot with it. A setup from a bigger stage squeezes to fit. Rig and setups save in the browser for now and move to the band with share links (#11).
 - Stage size, snap and Clear Stage live on the stage size tag.
-- Plots save in the browser.
+- **Your Plots:** keep several plots in this browser and switch between them.
+- **Share:** one click makes a **view link** (`/p/…`, look-only, for venues and engineers, with the input list and a Copy button) and an **edit link** (`/edit/…#k=…`) for the band. No account needed. Shared plots save online a moment after each change, and opening the edit link on another device brings the plot there. **Make a New Edit Link** turns off the old one if it leaks.
 
 ## Next
 
 - A print-ready plot sheet (PDF: plot, input list, mixes, contact).
-- Shareable plot links (Supabase): an edit link and a view-only link, no account needed.
 - Connect to Seeens: attach a plot to a claimed band profile.
 - Better gear models and per-gear sounds.
 
@@ -31,8 +31,21 @@ Stage plots that don't suck. Plop gear on a stage, move it around, and the input
 
 ```sh
 npm install
+cp .env.example .env.local   # then set PLOT_STORE=memory, or fill in Upstash
 npm run dev
 ```
+
+Without a store, sharing is off (the app says so) and everything else works. `PLOT_STORE=memory` keeps shared plots in memory for local testing; they're gone when the server restarts.
+
+### Share links in production
+
+1. In the Vercel project, go to **Storage** (or the Marketplace), add **Upstash Redis** on the free plan and connect it to this project. That sets `KV_REST_API_URL` and `KV_REST_API_TOKEN`.
+2. Add `RATE_LIMIT_SALT` (any long random string).
+3. Redeploy.
+
+The browser never talks to Redis. Everything goes through `/api/plots`, which checks edit tokens (only their SHA-256 is stored), limits new plots to 20 an hour per address, and caps plots at 300 pieces and 200 KB. Each plot is one key (`plot:<id>`); a typical plot is a few KB.
+
+## Checks
 
 Checks: `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test`, `npm run build`.
 
@@ -42,7 +55,8 @@ Checks: `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm test`,
 - `src/lib/gear.ts` loads the catalog; `src/lib/gear-schema.ts` defines and checks it.
 - `src/lib/plot.ts` plot data and everything derived from it (input list, copy text, parsing saved plots). Pure, tested in `plot.test.ts`.
 - `src/lib/stage/` the Three.js side: `engine.ts` (scene, camera, pointer handling), `builders.ts` (gear models), `sound.ts` (the plop).
-- `src/components/` the React panels around the stage.
+- `src/lib/share.ts` share link ids, tokens and checks; `src/lib/local-plots.ts` the plots kept in the browser; `src/lib/server/` the plot store (Upstash Redis or memory) used by `src/app/api/plots/`.
+- `src/components/` the React UI around the stage; `src/app/p/[id]` is the view page and `src/app/edit/[id]` opens edit links.
 
 ## Adding Gear
 
