@@ -445,6 +445,11 @@
     left: auto;
     right: 0;
   }
+  /* opens under its button, right-aligned, at every size */
+  .popover.popover-end {
+    left: auto;
+    right: 0;
+  }
 
   .tag-button {
     display: inline-flex;
@@ -509,6 +514,7 @@
   .labels {
     position: absolute;
     inset: 0;
+    z-index: 2;
     pointer-events: none;
     overflow: hidden;
   }
@@ -530,12 +536,14 @@
   .plot-label.sel {
     background: var(--plate-magenta);
   }
+  .plot-label.culled,
   .plot-label.dim {
     opacity: 0;
     pointer-events: none;
   }
   .stage-top {
     position: absolute;
+    z-index: 6;
     top: 12px;
     left: 12px;
     right: 12px;
@@ -666,6 +674,28 @@
     grid-area: inputs;
   }
 
+  /* Phones and narrow windows (header) and narrow stages (toolbar). */
+  .show-mobile,
+  .show-compact {
+    display: none;
+  }
+  @media (max-width: 1000px) {
+    .hide-mobile {
+      display: none !important;
+    }
+    .show-mobile {
+      display: revert;
+    }
+  }
+  @media (max-width: 760px) {
+    .hide-compact {
+      display: none !important;
+    }
+    .show-compact {
+      display: revert;
+    }
+  }
+
   @media (max-width: 1000px) {
     .app {
       height: auto;
@@ -719,18 +749,38 @@
     .hint {
       display: none;
     }
+    /* one row: Plots · band name · Share */
     .head-controls {
       width: 100%;
+      flex-wrap: nowrap;
     }
     .head-controls > .field {
-      flex: 1 1 100%;
+      flex: 1 1 auto;
+      width: 0;
     }
-    .head-controls > .btn,
     .head-controls > .relative {
-      flex: 1;
+      flex: none;
     }
-    .head-controls > .relative > .btn {
-      width: 100%;
+    .app-head {
+      gap: 10px;
+    }
+    .wordmark {
+      font-size: 24px;
+      line-height: 24px;
+    }
+    .window > .tape,
+    .stage-wrap > .tape {
+      display: none;
+    }
+    .plot-label {
+      font-size: 10px;
+      line-height: 12px;
+      padding: 0 4px;
+    }
+    /* the tip button: smaller, and clear of the content edge */
+    #bmc-wbtn {
+      transform: scale(0.7);
+      transform-origin: bottom right;
     }
   }
 }
